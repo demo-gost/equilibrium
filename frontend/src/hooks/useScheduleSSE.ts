@@ -25,8 +25,8 @@ export const useScheduleSSE = () => {
       eventSourceRef.current.close();
     }
 
-    // SSE requires the token in the URL (EventSource doesn't support custom headers)
-    const baseUrl = import.meta.env.VITE_API_URL || '';
+    const rawBaseUrl = import.meta.env.VITE_API_URL || '';
+    const baseUrl = rawBaseUrl.replace(/\/$/, '');
     const url = `${baseUrl}/api/schedule/sse?token=${encodeURIComponent(accessToken)}`;
     const es = new EventSource(url);
     eventSourceRef.current = es;

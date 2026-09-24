@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { IonContent, IonPage } from '@ionic/react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import api from '../lib/api'
 import { useAuthStore } from '../store/auth.store'
@@ -11,8 +11,12 @@ const LoginPage = () => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const { setAuth } = useAuthStore()
+  const { setAuth, isAuthenticated } = useAuthStore()
   const router = useIonRouter()
+
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
