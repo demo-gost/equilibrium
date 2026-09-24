@@ -1,0 +1,80 @@
+# ──────────────────────────────────────────────
+# Dependencies
+# ──────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+venv/
+.venv/
+env/
+.env/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ──────────────────────────────────────────────
+# Environment & Secrets — NEVER COMMIT THESE
+# ──────────────────────────────────────────────
+.env
+.env.local
+.env.production
+.env.*.local
+
+# ──────────────────────────────────────────────
+# Build Output
+# ──────────────────────────────────────────────
+dist/
+dist-ssr/
+*.local
+backend/dist/
+
+# ──────────────────────────────────────────────
+# Logs
+# ──────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# ──────────────────────────────────────────────
+# Editor & OS
+# ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# ──────────────────────────────────────────────
+# ML Artifacts (large binary files — not for git)
+# ──────────────────────────────────────────────
+ml-service/artifacts/*.joblib
+ml-service/artifacts/*.pkl
+
+# ──────────────────────────────────────────────
+# Capacitor / Mobile
+# ──────────────────────────────────────────────
+frontend/android/
+frontend/ios/
+frontend/.capacitor/
+
+# ──────────────────────────────────────────────
+# Misc
+# ──────────────────────────────────────────────
+*.tsbuildinfo
+.eslintcache
+coverage/
