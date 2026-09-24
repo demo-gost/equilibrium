@@ -16,6 +16,7 @@ import SchedulePage from './pages/SchedulePage'
 import TasksPage from './pages/TasksPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import ProfilePage from './pages/ProfilePage'
+import { InstallPwaBanner } from './components/InstallPwaBanner'
 
 const AuthenticatedApp = () => {
   useScheduleSSE() // Connect to SSE stream once authenticated
@@ -62,6 +63,7 @@ const App = () => {
 
   return (
     <IonApp>
+      <InstallPwaBanner />
       <IonReactRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
