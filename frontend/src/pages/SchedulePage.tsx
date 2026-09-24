@@ -10,12 +10,12 @@ import { WeeklyCalendarView } from '../components/WeeklyCalendarView'
 import { OnboardingTour } from '../components/OnboardingTour'
 
 const blockConfig: Record<string, { bg: string; border: string; icon: string; label: string }> = {
-  TASK:     { bg: 'bg-brand-primary/15',  border: 'border-brand-primary/30',  icon: '📚', label: 'Task' },
-  BREAK:    { bg: 'bg-status-success/10', border: 'border-status-success/20', icon: '☕', label: 'Break' },
-  BUFFER:   { bg: 'bg-white/3',           border: 'border-white/8',           icon: '🔄', label: 'Buffer' },
-  SLEEP:    { bg: 'bg-blue-900/15',       border: 'border-blue-500/20',       icon: '🌙', label: 'Sleep' },
-  COLLEGE:  { bg: 'bg-orange-500/10',     border: 'border-orange-500/20',     icon: '🎓', label: 'College' },
-  PERSONAL: { bg: 'bg-purple-500/10',     border: 'border-purple-500/20',     icon: '🏠', label: 'Personal' },
+  TASK:     { bg: 'bg-brand-primary/15 hover:bg-brand-primary/20', border: 'border-brand-primary/30', icon: '📚', label: 'Task' },
+  BREAK:    { bg: 'bg-status-success/10 hover:bg-status-success/15', border: 'border-status-success/20', icon: '☕', label: 'Break' },
+  BUFFER:   { bg: 'bg-white/3 hover:bg-white/6',           border: 'border-white/8',           icon: '🔄', label: 'Buffer' },
+  SLEEP:    { bg: 'bg-blue-900/15 hover:bg-blue-900/25',   border: 'border-blue-500/20',       icon: '🌙', label: 'Sleep' },
+  COLLEGE:  { bg: 'bg-orange-500/10 hover:bg-orange-500/15', border: 'border-orange-500/20',     icon: '🎓', label: 'College' },
+  PERSONAL: { bg: 'bg-purple-500/10 hover:bg-purple-500/15', border: 'border-purple-500/20',     icon: '🏠', label: 'Personal' },
 }
 
 const SchedulePage = () => {
@@ -61,48 +61,70 @@ const SchedulePage = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        <div className="max-w-2xl mx-auto px-4 pt-12 pb-24">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+        <div className="max-w-3xl mx-auto px-4 pt-10 pb-24 space-y-6">
+          {/* Header Banner */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card-elevated p-6 border border-brand-primary/20 shadow-xl rounded-2xl">
             <div>
-              <h1 className="text-2xl font-bold gradient-text">Schedule</h1>
-              <p className="text-text-muted text-sm">{format(selectedDate, 'MMMM d, yyyy')}</p>
-            </div>
-            <div className="flex gap-2 items-center flex-wrap">
-              <button
-                onClick={() => setShowTour(true)}
-                className="btn-secondary text-sm py-2 px-3"
-                title="Start Onboarding Tour"
-              >
-                ❓ Tour
-              </button>
-              <div className="flex bg-white/5 border border-white/10 rounded-xl p-0.5">
-                <button
-                  onClick={() => setViewMode('timeline')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    viewMode === 'timeline' ? 'bg-brand-primary text-white shadow-sm' : 'text-text-muted hover:text-text-primary'
-                  }`}
-                >
-                  📋 Timeline
-                </button>
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    viewMode === 'grid' ? 'bg-brand-primary text-white shadow-sm' : 'text-text-muted hover:text-text-primary'
-                  }`}
-                >
-                  📅 Weekly Grid
-                </button>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">⚖️</span>
+                <h1 className="text-2xl font-extrabold gradient-text">Study Schedule</h1>
               </div>
+              <p className="text-text-muted text-xs mt-1 font-medium">
+                📅 {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+              </p>
+            </div>
+
+            <button
+              id="generate-schedule-btn"
+              onClick={() => generateMutation.mutate()}
+              disabled={generateMutation.isPending}
+              className="btn-primary py-2.5 px-5 text-sm font-semibold shadow-glow shrink-0"
+            >
+              {generateMutation.isPending ? (
+                <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+              ) : '⚡'}
+              {generateMutation.isPending ? 'Generating Schedule...' : 'Generate AI Schedule'}
+            </button>
+          </div>
+
+          {/* Action Toolbar & View Mode Selector */}
+          <div className="flex flex-wrap items-center justify-between gap-3 glass-card p-3 rounded-2xl border border-white/5">
+            {/* View Mode Segmented Switcher */}
+            <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 shrink-0">
+              <button
+                onClick={() => setViewMode('timeline')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  viewMode === 'timeline'
+                    ? 'bg-brand-primary text-white shadow-md'
+                    : 'text-text-muted hover:text-text-primary'
+                }`}
+              >
+                📋 Timeline
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  viewMode === 'grid'
+                    ? 'bg-brand-primary text-white shadow-md'
+                    : 'text-text-muted hover:text-text-primary'
+                }`}
+              >
+                📅 Weekly Grid
+              </button>
+            </div>
+
+            {/* Quick Action Tools */}
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => downloadICSFile(blocks, `schedule-${format(selectedDate, 'yyyy-MM-dd')}.ics`)}
                 disabled={blocks.length === 0}
-                className="btn-secondary text-sm py-2 px-3"
+                className="btn-secondary text-xs py-2 px-3 font-medium"
                 title="Export schedule to Google Calendar / iCal"
               >
                 📅 Export .ics
               </button>
-              <label className="btn-secondary text-sm py-2 px-3 cursor-pointer" title="Import Google Calendar file">
+
+              <label className="btn-secondary text-xs py-2 px-3 font-medium cursor-pointer" title="Import Google Calendar .ics file">
                 📥 Import .ics
                 <input
                   type="file"
@@ -125,41 +147,38 @@ const SchedulePage = () => {
                   }}
                 />
               </label>
+
               <button
-                id="generate-schedule-btn"
-                onClick={() => generateMutation.mutate()}
-                disabled={generateMutation.isPending}
-                className="btn-primary text-sm py-2 px-4"
+                onClick={() => setShowTour(true)}
+                className="btn-secondary text-xs py-2 px-3 font-medium"
+                title="Start Onboarding Tour"
               >
-                {generateMutation.isPending ? (
-                  <span className="animate-spin w-3 h-3 border-2 border-white/30 border-t-white rounded-full" />
-                ) : '⚡'}
-                {generateMutation.isPending ? 'Generating...' : 'Generate'}
+                ❓ Tour
               </button>
             </div>
           </div>
 
-          {/* Week Selector */}
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-hide">
+          {/* Week Selector Bar */}
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {days.map((day) => {
               const isSelected = format(day, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
               return (
                 <button
                   key={day.toISOString()}
                   onClick={() => setSelectedDate(day)}
-                  className={`flex flex-col items-center px-3 py-2 rounded-xl transition-all shrink-0 min-w-[50px]
+                  className={`flex flex-col items-center px-4 py-2.5 rounded-2xl transition-all shrink-0 min-w-[60px] border
                     ${isSelected
-                      ? 'bg-brand-primary text-white shadow-glow'
-                      : 'glass-card text-text-secondary hover:text-text-primary'}`}
+                      ? 'bg-brand-primary border-brand-primary text-white shadow-glow scale-[1.02]'
+                      : 'glass-card border-white/5 text-text-secondary hover:text-text-primary hover:border-white/10'}`}
                 >
-                  <span className="text-xs">{format(day, 'EEE')}</span>
-                  <span className="text-lg font-bold">{format(day, 'd')}</span>
+                  <span className="text-[11px] font-semibold uppercase">{format(day, 'EEE')}</span>
+                  <span className="text-base font-extrabold mt-0.5">{format(day, 'd')}</span>
                 </button>
               )
             })}
           </div>
 
-          {/* View Render */}
+          {/* Main View Display */}
           {viewMode === 'grid' ? (
             <WeeklyCalendarView
               selectedDate={selectedDate}
@@ -170,16 +189,25 @@ const SchedulePage = () => {
             />
           ) : isLoading ? (
             <div className="space-y-3">
-              {[...Array(5)].map((_, i) => <div key={i} className="skeleton h-16 rounded-xl" />)}
+              {[...Array(5)].map((_, i) => <div key={i} className="skeleton h-20 rounded-2xl" />)}
             </div>
           ) : blocks.length === 0 ? (
-            <div className="glass-card p-8 text-center">
-              <div className="text-4xl mb-3">📭</div>
-              <h3 className="font-bold text-text-primary mb-1">Nothing scheduled</h3>
-              <p className="text-text-muted text-sm mb-4">Click "Generate" to create your AI-powered schedule</p>
+            <div className="glass-card-elevated p-10 text-center rounded-2xl border border-white/5">
+              <div className="text-5xl mb-3">📭</div>
+              <h3 className="font-bold text-text-primary text-lg mb-1">Nothing Scheduled</h3>
+              <p className="text-text-muted text-sm max-w-sm mx-auto mb-5">
+                No blocks scheduled for this day. Click "Generate AI Schedule" to automatically build your optimal timeline.
+              </p>
+              <button
+                onClick={() => generateMutation.mutate()}
+                disabled={generateMutation.isPending}
+                className="btn-primary py-2.5 px-5 text-xs font-semibold inline-flex items-center gap-2"
+              >
+                ⚡ Generate AI Schedule
+              </button>
             </div>
           ) : (
-            <div className="relative">
+            <div className="relative space-y-2">
               {blocks.map((block, i) => {
                 const cfg = blockConfig[block.type] || blockConfig.TASK
                 const task = block.taskId as Task | undefined
@@ -190,55 +218,81 @@ const SchedulePage = () => {
                 return (
                   <motion.div
                     key={block._id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.03 }}
-                    className="timeline-block"
+                    className="timeline-block group"
                   >
-                    {/* Time label */}
-                    <div className="w-14 shrink-0 text-right">
-                      <span className="text-xs font-mono text-text-muted">
+                    {/* Time Label Column */}
+                    <div className="w-16 shrink-0 text-right pt-2">
+                      <span className="text-xs font-mono font-bold text-text-muted">
                         {format(start, 'HH:mm')}
                       </span>
                     </div>
 
-                    {/* Timeline dot */}
-                    <div className="flex flex-col items-center">
-                      <div className={`w-3 h-3 rounded-full border-2 shrink-0 z-10
-                        ${isNow ? 'bg-brand-primary border-brand-primary animate-pulse' : `${cfg.border} bg-bg-primary`}`}
+                    {/* Vertical Connector Line & Node */}
+                    <div className="flex flex-col items-center pt-2.5">
+                      <div
+                        className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 z-10 transition-all
+                          ${isNow ? 'bg-brand-primary border-brand-primary ring-4 ring-brand-primary/30 animate-pulse' : `${cfg.border} bg-bg-primary`}`}
                       />
                       {i < blocks.length - 1 && (
-                        <div className="flex-1 w-px bg-white/5 mt-1" style={{ minHeight: 24 }} />
+                        <div className="flex-1 w-0.5 bg-white/10 mt-1" style={{ minHeight: 32 }} />
                       )}
                     </div>
 
-                    {/* Block card */}
-                    <div className={`flex-1 mb-3 p-3.5 rounded-xl border ${cfg.bg} ${cfg.border} ${isNow ? 'ring-1 ring-brand-primary/50' : ''}`}>
-                      <div className="flex items-start justify-between gap-2">
+                    {/* Block Card */}
+                    <div
+                      className={`flex-1 mb-2 p-4 rounded-2xl border ${cfg.bg} ${cfg.border} transition-all border-l-4 shadow-sm hover:shadow-md
+                        ${isNow ? 'ring-2 ring-brand-primary/50 shadow-glow' : ''}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span>{cfg.icon}</span>
-                            <span className="font-semibold text-sm text-text-primary truncate">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-lg">{cfg.icon}</span>
+                            <span className="font-bold text-sm text-text-primary truncate">
                               {block.type === 'TASK' ? (task?.title || 'Task') : cfg.label}
                             </span>
-                            {isNow && <span className="badge bg-brand-primary/20 text-brand-primary text-xs">NOW</span>}
-                            {block.status === 'completed' && <span className="text-status-success text-xs">✓ Done</span>}
+                            {isNow && (
+                              <span className="px-2 py-0.5 rounded-full bg-brand-primary/20 text-brand-primary text-[10px] font-bold border border-brand-primary/30">
+                                NOW ACTIVE
+                              </span>
+                            )}
+                            {block.status === 'completed' && (
+                              <span className="px-2 py-0.5 rounded-full bg-status-success/20 text-status-success text-[10px] font-bold border border-status-success/30">
+                                ✓ COMPLETED
+                              </span>
+                            )}
                           </div>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-text-muted">
-                            <span>{format(start, 'h:mm a')} – {format(end, 'h:mm a')}</span>
-                            <span>{block.scheduledDurationMinutes}min</span>
+
+                          <div className="flex items-center gap-3 mt-2 text-xs text-text-muted font-medium flex-wrap">
+                            <span>🕒 {format(start, 'h:mm a')} – {format(end, 'h:mm a')}</span>
+                            <span className="bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
+                              ⏱ {block.scheduledDurationMinutes} mins
+                            </span>
+                            {task?.category && (
+                              <span className="capitalize bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
+                                📂 {task.category}
+                              </span>
+                            )}
                           </div>
+
                           {task?.predictedDurationMinutes && task.estimatedDurationMinutes && (
-                            <div className="text-xs text-brand-accent mt-1">
-                              🤖 AI adjusted: {task.estimatedDurationMinutes}min → {task.predictedDurationMinutes}min
+                            <div className="text-xs text-brand-accent mt-2 font-medium flex items-center gap-1">
+                              <span>🤖 AI Workload Tuning:</span>
+                              <span>{task.estimatedDurationMinutes}m → {task.predictedDurationMinutes}m</span>
                             </div>
                           )}
+
                           {block.reason && block.type !== 'BUFFER' && (
-                            <div className="text-xs text-text-muted mt-1 italic">{block.reason}</div>
+                            <div className="text-xs text-text-muted mt-1.5 italic">
+                              "{block.reason}"
+                            </div>
                           )}
                         </div>
+
                         {task && block.status === 'scheduled' && (
-                          <div className="flex flex-col gap-1 shrink-0">
+                          <div className="flex flex-col items-end gap-2 shrink-0">
                             <ExtendButton taskId={task._id} />
                           </div>
                         )}
@@ -274,15 +328,18 @@ const ExtendButton = ({ taskId }: { taskId: string }) => {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="text-xs text-brand-primary hover:text-brand-secondary transition-colors bg-brand-primary/10 px-2 py-1 rounded-lg"
+        className="text-xs text-brand-primary hover:text-brand-secondary transition-all bg-brand-primary/10 hover:bg-brand-primary/20 border border-brand-primary/30 px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1"
       >
         +Extend
       </button>
       {open && (
-        <div className="absolute right-0 top-8 bg-bg-elevated border border-white/10 rounded-xl p-2 z-10 flex flex-col gap-1 shadow-card">
+        <div className="absolute right-0 top-8 bg-bg-elevated border border-white/10 rounded-xl p-2 z-20 flex flex-col gap-1 shadow-2xl backdrop-blur-xl">
           {[15, 30, 60].map((m) => (
-            <button key={m} onClick={() => extendMutation.mutate(m)}
-              className="text-xs text-text-primary hover:text-brand-primary px-3 py-1.5 hover:bg-white/5 rounded-lg transition-colors">
+            <button
+              key={m}
+              onClick={() => extendMutation.mutate(m)}
+              className="text-xs text-text-primary hover:text-brand-primary px-3 py-1.5 hover:bg-white/5 rounded-lg transition-colors text-left font-medium"
+            >
               +{m} min
             </button>
           ))}
