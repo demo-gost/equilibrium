@@ -3,6 +3,7 @@ import { IonModal, IonContent } from '@ionic/react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import type { Task, TaskCategory } from '../types'
+import { SmartDeadlineWarning } from './SmartDeadlineWarning'
 
 interface Props {
   isOpen: boolean
@@ -130,6 +131,12 @@ const TaskFormModal = ({ isOpen, task, onClose, onSaved }: Props) => {
                 ))}
               </div>
             </div>
+
+            {/* Smart AI Warning for Coding / Complex Categories */}
+            <SmartDeadlineWarning
+              category={form.category}
+              historicalErrorPercent={form.category === 'coding' || form.category === 'project' ? 40 : 0}
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <div>

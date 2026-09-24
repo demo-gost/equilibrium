@@ -14,6 +14,7 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', taskController.getTasks);
+router.post('/parse-nl', taskController.parseNLTask);
 router.post('/', validate(createTaskSchema), taskController.createTask);
 router.get('/:id', taskController.getTask);
 router.put('/:id', validate(updateTaskSchema), taskController.updateTask);

@@ -5,8 +5,28 @@ import { rescheduleService } from '../scheduler/reschedule';
 import { AuthRequest } from '../middleware/auth';
 import { successResponse, paginatedResponse } from '../utils/response';
 
+import { parseNaturalLanguageTask } from '../ai/nl-parser';
+
 const param = (p: string | string[]): string => Array.isArray(p) ? p[0] : p;
 
+export const parseNLTask = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { input } = req.body;
+    if (!input || typeof input !== 'string') {
+      res.status(400).json({ message: 'Input text required' });
+      return;
+    }
+    const parsed = parseNaturalLanguageTask(input);
+    const createdTask = await taskService.createTask(req.user!.userId, {
+      ...parsed,
+      deadline: parsed.deadline.toISOString(),
+    });
+    rescheduleService.reschedule(req.user!.userId, 'new_urgent_task').catch(() => {});
+    res.status(201).json(successResponse(createdTask, 'Task parsed and created automatically', 201));
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const createTask = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

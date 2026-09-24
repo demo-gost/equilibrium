@@ -9,6 +9,8 @@ import TaskFormModal from '../components/TaskFormModal'
 import CompleteTaskModal from '../components/CompleteTaskModal'
 import FeedbackModal from '../components/FeedbackModal'
 import { getGoogleCalendarUrl } from '../utils/googleCalendar'
+import { NLTaskInput } from '../components/NLTaskInput'
+import { FocusSessionModal } from '../components/FocusSessionModal'
 
 const PRIORITY_LABELS: Record<number, { label: string; class: string }> = {
   1: { label: 'Low', class: 'priority-badge-1' },
@@ -37,6 +39,7 @@ const TasksPage = () => {
   const [showForm, setShowForm] = useState(false)
   const [editTask, setEditTask] = useState<Task | null>(null)
   const [completeTask, setCompleteTask] = useState<Task | null>(null)
+  const [focusTask, setFocusTask] = useState<Task | null>(null)
   const [showFeedback, setShowFeedback] = useState(false)
 
   const { data, isLoading, refetch } = useQuery({
@@ -99,6 +102,9 @@ const TasksPage = () => {
               </button>
             </div>
           </div>
+
+          {/* Natural Language Task Input */}
+          <NLTaskInput />
 
           {/* Status Filter Tabs */}
           <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
@@ -208,6 +214,13 @@ const TasksPage = () => {
                             ✓ Complete
                           </button>
                           <button
+                            onClick={() => setFocusTask(task)}
+                            className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1 text-brand-primary border-brand-primary/30 font-semibold"
+                            title="Start Focus Mode Timer"
+                          >
+                            🔥 Focus
+                          </button>
+                          <button
                             onClick={() => { setEditTask(task); setShowForm(true) }}
                             className="btn-secondary text-xs py-1.5 px-3"
                           >
@@ -269,6 +282,13 @@ const TasksPage = () => {
           />
         )}
         <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+        {focusTask && (
+          <FocusSessionModal
+            isOpen={!!focusTask}
+            task={focusTask}
+            onClose={() => setFocusTask(null)}
+          />
+        )}
       </IonContent>
     </IonPage>
   )
