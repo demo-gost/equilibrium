@@ -33,9 +33,10 @@ jobs:
           cd frontend
           npm run build
 
-      - name: Sync Capacitor Android
+      - name: Add & Sync Capacitor Android
         run: |
           cd frontend
+          npx cap add android || true
           npx cap sync android
 
       - name: Make Gradlew Executable
