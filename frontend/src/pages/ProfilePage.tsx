@@ -4,9 +4,13 @@ import { useIonRouter } from '@ionic/react'
 import { useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { useAuthStore } from '../store/auth.store'
+import { useThemeStore } from '../store/theme.store'
+import { useNotifications } from '../hooks/useNotifications'
 
 const ProfilePage = () => {
   const { user, setUser, logout } = useAuthStore()
+  const { theme, setTheme } = useThemeStore()
+  const { hasPermission, requestPermission } = useNotifications()
   const qc = useQueryClient()
   const router = useIonRouter()
   const [saving, setSaving] = useState(false)
@@ -76,6 +80,50 @@ const ProfilePage = () => {
               <div className="font-bold text-text-primary text-lg">{user?.name}</div>
               <div className="text-text-muted text-sm">{user?.email}</div>
               <div className="text-text-muted text-xs mt-0.5">{user?.timezone}</div>
+            </div>
+          </div>
+
+          {/* Theme & Notifications */}
+          <div className="glass-card-elevated p-5 mb-4 space-y-4">
+            <h2 className="font-bold text-text-primary text-base">Appearance & Theme</h2>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setTheme('light')}
+                className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all
+                  ${theme === 'light' ? 'bg-brand-primary text-white shadow-md' : 'btn-secondary'}`}
+              >
+                ☀️ Light
+              </button>
+              <button
+                onClick={() => setTheme('dark')}
+                className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all
+                  ${theme === 'dark' ? 'bg-brand-primary text-white shadow-md' : 'btn-secondary'}`}
+              >
+                🌙 Dark
+              </button>
+              <button
+                onClick={() => setTheme('system')}
+                className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all
+                  ${theme === 'system' ? 'bg-brand-primary text-white shadow-md' : 'btn-secondary'}`}
+              >
+                💻 System
+              </button>
+            </div>
+          </div>
+
+          <div className="glass-card-elevated p-5 mb-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-bold text-text-primary text-base">Push Notifications</h2>
+                <p className="text-text-muted text-xs">Deadline reminders and study alerts</p>
+              </div>
+              <button
+                onClick={requestPermission}
+                className={`py-1.5 px-3 rounded-xl text-xs font-semibold transition-all
+                  ${hasPermission ? 'bg-status-success/20 text-status-success border border-status-success/30' : 'btn-primary'}`}
+              >
+                {hasPermission ? '✓ Enabled' : '🔔 Enable'}
+              </button>
             </div>
           </div>
 

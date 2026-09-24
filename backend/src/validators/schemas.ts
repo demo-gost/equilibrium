@@ -25,6 +25,8 @@ export const createTaskSchema = z.object({
   estimatedDurationMinutes: z.number().int().min(5).max(480),
   deadline: z.string().refine((d) => !isNaN(Date.parse(d)), 'Invalid deadline date'),
   tags: z.array(z.string()).optional(),
+  isRecurring: z.boolean().optional(),
+  recurrencePattern: z.enum(['none', 'daily', 'weekly', 'weekdays', 'monthly']).optional(),
 });
 
 export const updateTaskSchema = createTaskSchema.partial().extend({

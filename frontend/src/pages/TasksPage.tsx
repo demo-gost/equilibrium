@@ -8,6 +8,7 @@ import type { Task, TaskStatus } from '../types'
 import TaskFormModal from '../components/TaskFormModal'
 import CompleteTaskModal from '../components/CompleteTaskModal'
 import FeedbackModal from '../components/FeedbackModal'
+import { getGoogleCalendarUrl } from '../utils/googleCalendar'
 
 const PRIORITY_LABELS: Record<number, { label: string; class: string }> = {
   1: { label: 'Low', class: 'priority-badge-1' },
@@ -181,6 +182,11 @@ const TasksPage = () => {
                               {isOverdue && ' ⚠️ Overdue'}
                             </span>
                             <span className="text-xs text-text-muted capitalize">📂 {task.category}</span>
+                            {task.isRecurring && (
+                              <span className="text-xs bg-brand-primary/10 text-brand-primary border border-brand-primary/20 px-2 py-0.5 rounded-full font-medium capitalize">
+                                🔄 {task.recurrencePattern}
+                              </span>
+                            )}
                           </div>
 
                           {task.extensionCount > 0 && (
@@ -207,6 +213,20 @@ const TasksPage = () => {
                           >
                             Edit
                           </button>
+                          <a
+                            href={getGoogleCalendarUrl({
+                              title: task.title,
+                              description: task.description,
+                              startTime: task.scheduledStartTime || task.deadline,
+                              endTime: task.scheduledEndTime || new Date(new Date(task.deadline).getTime() + (task.estimatedDurationMinutes || 60) * 60000).toISOString(),
+                            })}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1"
+                            title="Add to Google Calendar"
+                          >
+                            📅 GCal
+                          </a>
                           <button
                             onClick={() => skipMutation.mutate(task._id)}
                             className="text-xs text-text-muted hover:text-status-warning transition-colors px-2 py-1.5"

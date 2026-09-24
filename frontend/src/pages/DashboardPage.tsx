@@ -1,9 +1,12 @@
+import { useEffect } from 'react'
 import { IonContent, IonPage, IonRefresher, IonRefresherContent } from '@ionic/react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
 import api from '../lib/api'
 import { useAuthStore } from '../store/auth.store'
+import { useThemeStore } from '../store/theme.store'
+import { useNotifications } from '../hooks/useNotifications'
 import type { ScheduleBlock, Task, AnalyticsSummary } from '../types'
 import TaskQuickActions from '../components/TaskQuickActions'
 import WorkloadMeter from '../components/WorkloadMeter'
@@ -35,6 +38,8 @@ const blockColors: Record<string, string> = {
 
 const DashboardPage = () => {
   const { user } = useAuthStore()
+  const { theme, setTheme } = useThemeStore()
+  const { checkTaskDeadlines } = useNotifications()
 
   const { data: schedule = [], refetch: refetchSchedule } = useQuery({
     queryKey: ['schedule-today'],
@@ -50,6 +55,15 @@ const DashboardPage = () => {
     queryKey: ['insights'],
     queryFn: fetchInsights,
   })
+
+  useEffect(() => {
+    const tasks = schedule
+      .filter((b) => b.type === 'TASK' && b.taskId && typeof b.taskId === 'object')
+      .map((b) => b.taskId as Task)
+    if (tasks.length > 0) {
+      checkTaskDeadlines(tasks)
+    }
+  }, [schedule, checkTaskDeadlines])
 
   const now = new Date()
   const taskBlocks = schedule.filter((b) => b.type === 'TASK' && b.status === 'scheduled')
@@ -77,10 +91,19 @@ const DashboardPage = () => {
 
         <div className="max-w-2xl mx-auto px-4 pt-12 pb-24">
           {/* Header */}
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-            <p className="text-text-muted text-sm">{greeting()},</p>
-            <h1 className="text-2xl font-bold text-text-primary">{user?.name?.split(' ')[0]} 👋</h1>
-            <p className="text-text-muted text-xs mt-0.5">{format(now, 'EEEE, MMMM d')}</p>
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-start justify-between mb-6">
+            <div>
+              <p className="text-text-muted text-sm">{greeting()},</p>
+              <h1 className="text-2xl font-bold text-text-primary">{user?.name?.split(' ')[0]} 👋</h1>
+              <p className="text-text-muted text-xs mt-0.5">{format(now, 'EEEE, MMMM d')}</p>
+            </div>
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="btn-secondary py-2 px-3 text-sm rounded-xl shrink-0"
+              title="Toggle Light / Dark Theme"
+            >
+              {theme === 'dark' ? '🌙' : '☀️'}
+            </button>
           </motion.div>
 
           {/* Metrics Row */}

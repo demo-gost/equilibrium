@@ -35,6 +35,8 @@ export interface ITask extends Document {
   scheduledStartTime?: Date;
   scheduledEndTime?: Date;
   completedAt?: Date;
+  isRecurring?: boolean;
+  recurrencePattern?: 'none' | 'daily' | 'weekly' | 'weekdays' | 'monthly';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,6 +68,12 @@ const TaskSchema = new Schema<ITask>(
     scheduledStartTime: { type: Date },
     scheduledEndTime: { type: Date },
     completedAt: { type: Date },
+    isRecurring: { type: Boolean, default: false },
+    recurrencePattern: {
+      type: String,
+      enum: ['none', 'daily', 'weekly', 'weekdays', 'monthly'],
+      default: 'none',
+    },
   },
   { timestamps: true }
 );

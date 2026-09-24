@@ -15,6 +15,8 @@ export interface CreateTaskDto {
   estimatedDurationMinutes: number;
   deadline: string;
   tags?: string[];
+  isRecurring?: boolean;
+  recurrencePattern?: 'none' | 'daily' | 'weekly' | 'weekdays' | 'monthly';
 }
 
 export interface UpdateTaskDto extends Partial<CreateTaskDto> {
@@ -123,6 +125,35 @@ export class TaskService {
     task.actualDurationMinutes = actualDurationMinutes;
     task.completedAt = now;
     await task.save();
+
+    // Spawn next occurrence if recurring
+    if (task.isRecurring && task.recurrencePattern && task.recurrencePattern !== 'none') {
+      const nextDeadline = new Date(task.deadline);
+      if (task.recurrencePattern === 'daily') {
+        nextDeadline.setDate(nextDeadline.getDate() + 1);
+      } else if (task.recurrencePattern === 'weekly') {
+        nextDeadline.setDate(nextDeadline.getDate() + 7);
+      } else if (task.recurrencePattern === 'weekdays') {
+        const day = nextDeadline.getDay();
+        const addDays = day === 5 ? 3 : day === 6 ? 2 : 1;
+        nextDeadline.setDate(nextDeadline.getDate() + addDays);
+      } else if (task.recurrencePattern === 'monthly') {
+        nextDeadline.setMonth(nextDeadline.getMonth() + 1);
+      }
+
+      await this.createTask(userId, {
+        title: task.title,
+        description: task.description,
+        category: task.category,
+        priority: task.priority,
+        difficulty: task.difficulty,
+        estimatedDurationMinutes: task.estimatedDurationMinutes,
+        deadline: nextDeadline.toISOString(),
+        tags: task.tags,
+        isRecurring: true,
+        recurrencePattern: task.recurrencePattern,
+      }).catch((err) => logger.error('Failed to create recurring task instance:', err));
+    }
 
     // Record history for ML training
     const estimationError = ((actualDurationMinutes - task.estimatedDurationMinutes) / task.estimatedDurationMinutes) * 100;

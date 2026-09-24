@@ -34,6 +34,8 @@ const TaskFormModal = ({ isOpen, task, onClose, onSaved }: Props) => {
     difficulty: task?.difficulty || 3,
     estimatedDurationMinutes: task?.estimatedDurationMinutes || 60,
     deadline: task?.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : '',
+    isRecurring: task?.isRecurring || false,
+    recurrencePattern: task?.recurrencePattern || 'none',
   })
   const [error, setError] = useState('')
 
@@ -47,6 +49,8 @@ const TaskFormModal = ({ isOpen, task, onClose, onSaved }: Props) => {
       difficulty: task?.difficulty || 3,
       estimatedDurationMinutes: task?.estimatedDurationMinutes || 60,
       deadline: task?.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : '',
+      isRecurring: task?.isRecurring || false,
+      recurrencePattern: task?.recurrencePattern || 'none',
     })
   })
 
@@ -160,8 +164,39 @@ const TaskFormModal = ({ isOpen, task, onClose, onSaved }: Props) => {
                 className="input-field"
                 value={form.deadline}
                 onChange={(e) => update('deadline', e.target.value)}
-                style={{ colorScheme: 'dark' }}
               />
+            </div>
+
+            {/* Recurrence */}
+            <div className="glass-card p-3 border border-white/5 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="label-text cursor-pointer mb-0 text-text-primary font-medium">🔄 Repeat Task Automatically</label>
+                <input
+                  type="checkbox"
+                  checked={form.isRecurring}
+                  onChange={(e) => {
+                    update('isRecurring', e.target.checked)
+                    if (e.target.checked && form.recurrencePattern === 'none') {
+                      update('recurrencePattern', 'daily')
+                    }
+                  }}
+                  className="w-4 h-4 accent-indigo-500 rounded cursor-pointer"
+                />
+              </div>
+              {form.isRecurring && (
+                <div>
+                  <select
+                    className="input-field mt-1 text-xs"
+                    value={form.recurrencePattern}
+                    onChange={(e) => update('recurrencePattern', e.target.value)}
+                  >
+                    <option value="daily">🔄 Daily</option>
+                    <option value="weekdays">💼 Weekdays (Mon-Fri)</option>
+                    <option value="weekly">📅 Weekly</option>
+                    <option value="monthly">🗓️ Monthly</option>
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 

@@ -66,6 +66,8 @@ export interface Task {
   scheduledStartTime?: string;
   scheduledEndTime?: string;
   completedAt?: string;
+  isRecurring?: boolean;
+  recurrencePattern?: 'none' | 'daily' | 'weekly' | 'weekdays' | 'monthly';
   createdAt: string;
   updatedAt: string;
 }

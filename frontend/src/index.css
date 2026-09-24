@@ -268,3 +268,54 @@ ion-searchbar {
   border-radius: 12px !important;
   color: #f1f5f9 !important;
 }
+
+/* ─── Light Mode Styles ─────────────────────────────────────── */
+html.light {
+  --color-bg-primary: #f8fafc;
+  --color-bg-secondary: #ffffff;
+  --color-bg-card: #f1f5f9;
+  --color-bg-elevated: #ffffff;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #ffffff;
+}
+
+html.light body, html.light #root {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+html.light .glass-card {
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+html.light .glass-card-elevated {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+html.light .input-field {
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+
+html.light .btn-secondary {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+}
+
+html.light ion-content {
+  --background: #f8fafc;
+}
+
+html.light ion-toolbar, html.light ion-tab-bar {
+  --background: #ffffff;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
