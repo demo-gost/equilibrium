@@ -34,5 +34,6 @@ router.get('/', scheduleController.getSchedule);
 router.get('/today', scheduleController.getTodaySchedule);
 router.post('/reschedule', scheduleController.triggerReschedule);
 router.post('/protected-block', validate(protectedBlockSchema), scheduleController.addProtectedBlock);
+router.put('/block/:id', scheduleController.updateBlockTimes);
 
 export default router;

@@ -113,6 +113,30 @@ export class ScheduleService {
     return block;
   }
 
+  async updateBlockTimes(userId: string, blockId: string, startTime: Date, endTime: Date) {
+    const durationMins = Math.max(5, Math.round((endTime.getTime() - startTime.getTime()) / 60000));
+    const block = await ScheduleBlock.findOneAndUpdate(
+      { _id: blockId, userId },
+      {
+        startTime,
+        endTime,
+        scheduledDurationMinutes: durationMins,
+      },
+      { new: true }
+    );
+
+    if (!block) throw createError('Schedule block not found', 404);
+
+    if (block.taskId) {
+      await Task.findByIdAndUpdate(block.taskId, {
+        scheduledStartTime: startTime,
+        scheduledEndTime: endTime,
+      });
+    }
+
+    return block;
+  }
+
   async triggerReschedule(userId: string, reason: string) {
     return rescheduleService.reschedule(userId, reason as never);
   }

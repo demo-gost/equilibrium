@@ -11,6 +11,7 @@ import type { ScheduleBlock, Task, AnalyticsSummary } from '../types'
 import TaskQuickActions from '../components/TaskQuickActions'
 import WorkloadMeter from '../components/WorkloadMeter'
 import InsightCard from '../components/InsightCard'
+import { OnboardingTour } from '../components/OnboardingTour'
 
 const fetchTodaySchedule = async (): Promise<ScheduleBlock[]> => {
   const res = await api.get('/schedule/today')
@@ -236,6 +237,8 @@ const DashboardPage = () => {
             </motion.div>
           )}
         </div>
+
+        <OnboardingTour />
       </IonContent>
     </IonPage>
   )

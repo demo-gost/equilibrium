@@ -6,6 +6,8 @@ import { format, parseISO, addDays, startOfDay, endOfDay } from 'date-fns'
 import api from '../lib/api'
 import type { ScheduleBlock, Task } from '../types'
 import { downloadICSFile, parseICSFile } from '../utils/ics'
+import { WeeklyCalendarView } from '../components/WeeklyCalendarView'
+import { OnboardingTour } from '../components/OnboardingTour'
 
 const blockConfig: Record<string, { bg: string; border: string; icon: string; label: string }> = {
   TASK:     { bg: 'bg-brand-primary/15',  border: 'border-brand-primary/30',  icon: '📚', label: 'Task' },
@@ -19,6 +21,8 @@ const blockConfig: Record<string, { bg: string; border: string; icon: string; la
 const SchedulePage = () => {
   const qc = useQueryClient()
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [viewMode, setViewMode] = useState<'timeline' | 'grid'>('timeline')
+  const [showTour, setShowTour] = useState(false)
 
   const from = startOfDay(selectedDate).toISOString()
   const to = endOfDay(selectedDate).toISOString()
@@ -33,6 +37,15 @@ const SchedulePage = () => {
 
   const generateMutation = useMutation({
     mutationFn: () => api.post('/schedule/generate', { planDays: 7 }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['schedule'] })
+      qc.invalidateQueries({ queryKey: ['schedule-today'] })
+    },
+  })
+
+  const updateBlockMutation = useMutation({
+    mutationFn: ({ id, startTime, endTime }: { id: string; startTime: Date; endTime: Date }) =>
+      api.put(`/schedule/block/${id}`, { startTime, endTime }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['schedule'] })
       qc.invalidateQueries({ queryKey: ['schedule-today'] })
@@ -55,7 +68,32 @@ const SchedulePage = () => {
               <h1 className="text-2xl font-bold gradient-text">Schedule</h1>
               <p className="text-text-muted text-sm">{format(selectedDate, 'MMMM d, yyyy')}</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center flex-wrap">
+              <button
+                onClick={() => setShowTour(true)}
+                className="btn-secondary text-sm py-2 px-3"
+                title="Start Onboarding Tour"
+              >
+                ❓ Tour
+              </button>
+              <div className="flex bg-white/5 border border-white/10 rounded-xl p-0.5">
+                <button
+                  onClick={() => setViewMode('timeline')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    viewMode === 'timeline' ? 'bg-brand-primary text-white shadow-sm' : 'text-text-muted hover:text-text-primary'
+                  }`}
+                >
+                  📋 Timeline
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    viewMode === 'grid' ? 'bg-brand-primary text-white shadow-sm' : 'text-text-muted hover:text-text-primary'
+                  }`}
+                >
+                  📅 Weekly Grid
+                </button>
+              </div>
               <button
                 onClick={() => downloadICSFile(blocks, `schedule-${format(selectedDate, 'yyyy-MM-dd')}.ics`)}
                 disabled={blocks.length === 0}
@@ -121,8 +159,16 @@ const SchedulePage = () => {
             })}
           </div>
 
-          {/* Timeline */}
-          {isLoading ? (
+          {/* View Render */}
+          {viewMode === 'grid' ? (
+            <WeeklyCalendarView
+              selectedDate={selectedDate}
+              blocks={blocks}
+              onBlockTimesUpdated={(id, startTime, endTime) => {
+                updateBlockMutation.mutate({ id, startTime, endTime })
+              }}
+            />
+          ) : isLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => <div key={i} className="skeleton h-16 rounded-xl" />)}
             </div>
@@ -204,6 +250,8 @@ const SchedulePage = () => {
             </div>
           )}
         </div>
+
+        <OnboardingTour forceOpen={showTour} onClose={() => setShowTour(false)} />
       </IonContent>
     </IonPage>
   )

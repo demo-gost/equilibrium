@@ -56,6 +56,22 @@ export const addProtectedBlock = async (req: AuthRequest, res: Response, next: N
   }
 };
 
+export const updateBlockTimes = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = req.params.id as string;
+    const { startTime, endTime } = req.body;
+    const block = await scheduleService.updateBlockTimes(
+      req.user!.userId,
+      id,
+      new Date(startTime),
+      new Date(endTime)
+    );
+    res.json(successResponse(block, 'Schedule block updated'));
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const triggerReschedule = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const result = await scheduleService.triggerReschedule(
