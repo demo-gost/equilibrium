@@ -30,7 +30,7 @@ export interface ScheduleResult {
  */
 export class SchedulingEngine {
   private readonly BUFFER_PERCENT = 0.15; // 15% buffer after each task
-  private readonly MIN_SLOT_MINUTES = 20; // Don't bother with tiny slots
+  private readonly MIN_SLOT_MINUTES = 5; // Allow small slots for 15-min tasks
 
   generate(
     user: IUser,
@@ -130,7 +130,8 @@ export class SchedulingEngine {
           remainingMinutes
         );
 
-        if (availableMinutes < this.MIN_SLOT_MINUTES) {
+        const minSlotRequired = Math.min(remainingMinutes, this.MIN_SLOT_MINUTES);
+        if (availableMinutes < minSlotRequired) {
           planningCursor = freeEnd;
           continue;
         }
@@ -288,7 +289,8 @@ export class SchedulingEngine {
     deadline: Date,
     horizon: Date
   ): Date | null {
-    const bound = new Date(Math.min(deadline.getTime(), horizon.getTime()));
+    const effectiveDeadline = deadline > cursor ? deadline : horizon;
+    const bound = new Date(Math.min(effectiveDeadline.getTime(), horizon.getTime()));
     if (cursor >= bound) return null;
 
     // Find next protected slot start after cursor
