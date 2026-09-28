@@ -134,7 +134,9 @@ export const WeeklyCalendarView = ({ selectedDate, blocks, onBlockTimesUpdated }
                       const cfg = BLOCK_STYLES[block.type] || BLOCK_STYLES.TASK;
                       const task = block.taskId as Task | undefined;
                       const title =
-                        block.type === 'TASK' ? task?.title || 'Task' : block.reason || cfg.icon + ' ' + block.type;
+                        block.type === 'TASK'
+                          ? `${task?.title || 'Task'}${block.reason ? ` (${block.reason})` : ''}`
+                          : block.reason || cfg.icon + ' ' + block.type;
 
                       return (
                         <div

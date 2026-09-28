@@ -11,23 +11,26 @@ export class ScheduleService {
   async generateSchedule(userId: string, fromDate?: Date, planDays = 7) {
     const now = fromDate || new Date();
 
+    const cancelFrom = new Date(now);
+    cancelFrom.setHours(0, 0, 0, 0);
+
     const [user, tasks, existingBlocks] = await Promise.all([
       User.findById(userId),
       Task.find({ userId, status: { $in: ['pending', 'in_progress'] } }),
       ScheduleBlock.find({
         userId,
-        startTime: { $gte: now },
+        startTime: { $gte: cancelFrom },
         isProtected: true,
       }),
     ]);
 
     if (!user) throw createError('User not found', 404);
 
-    // Cancel existing non-protected future blocks
+    // Cancel existing non-protected future blocks from start of day
     await ScheduleBlock.updateMany(
       {
         userId,
-        startTime: { $gte: now },
+        startTime: { $gte: cancelFrom },
         isProtected: false,
         status: 'scheduled',
       },

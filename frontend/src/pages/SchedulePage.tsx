@@ -251,7 +251,9 @@ const SchedulePage = () => {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-lg">{cfg.icon}</span>
                             <span className="font-bold text-sm text-text-primary truncate">
-                              {block.type === 'TASK' ? (task?.title || 'Task') : cfg.label}
+                              {block.type === 'TASK'
+                                ? `${task?.title || 'Task'}${block.reason ? ` (${block.reason})` : ''}`
+                                : cfg.label}
                             </span>
                             {isNow && (
                               <span className="px-2 py-0.5 rounded-full bg-brand-primary/20 text-brand-primary text-[10px] font-bold border border-brand-primary/30">
@@ -284,7 +286,7 @@ const SchedulePage = () => {
                             </div>
                           )}
 
-                          {block.reason && block.type !== 'BUFFER' && (
+                          {block.reason && block.type !== 'BUFFER' && block.type !== 'TASK' && (
                             <div className="text-xs text-text-muted mt-1.5 italic">
                               "{block.reason}"
                             </div>

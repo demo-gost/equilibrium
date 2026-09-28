@@ -67,6 +67,7 @@ export class SchedulingEngine {
       const effectiveDuration = this.effectiveDuration(task);
       const bufferMinutes = Math.round(effectiveDuration * this.BUFFER_PERCENT);
       let remainingMinutes = effectiveDuration;
+      const taskBlocks: Partial<IScheduleBlock>[] = [];
 
       // Check if task deadline is in range
       if (task.deadline < fromTime) {
@@ -137,7 +138,7 @@ export class SchedulingEngine {
         const chunkMinutes = Math.min(remainingMinutes, availableMinutes);
         const blockEnd = new Date(planningCursor.getTime() + chunkMinutes * 60000);
 
-        newBlocks.push({
+        taskBlocks.push({
           userId: task.userId,
           taskId: task._id,
           startTime: new Date(planningCursor),
@@ -145,7 +146,6 @@ export class SchedulingEngine {
           scheduledDurationMinutes: chunkMinutes,
           type: 'TASK' as BlockType,
           status: 'scheduled',
-          reason: chunkMinutes < effectiveDuration ? 'Partial task block (split across time)' : undefined,
         });
 
         // Update tracking
@@ -173,6 +173,15 @@ export class SchedulingEngine {
           }
         }
       }
+
+      if (taskBlocks.length > 1) {
+        const total = taskBlocks.length;
+        taskBlocks.forEach((b, idx) => {
+          b.reason = `Part ${idx + 1} of ${total}`;
+        });
+      }
+
+      newBlocks.push(...taskBlocks);
     }
 
     return { blocks: newBlocks, warnings, overflowTasks };
@@ -213,23 +222,32 @@ export class SchedulingEngine {
   ): TimeSlot[] {
     const slots: TimeSlot[] = [];
 
-    // Sleep blocks for each day
+    const preferredStartHour = user.studyPreferences?.preferredStartHour ?? 9;
+    const preferredEndHour = user.studyPreferences?.preferredEndHour ?? 22;
+    const bedtimeHour = user.sleepSchedule?.bedtimeHour ?? 23;
+    const bedtimeMin = user.sleepSchedule?.bedtimeMinute ?? 0;
+    const wakeHour = user.sleepSchedule?.wakeHour ?? 7;
+    const wakeMin = user.sleepSchedule?.wakeMinute ?? 0;
+
+    // Off-limits night hours (from study end / bedtime until next day study start / wake time)
+    const nightStartHour = Math.min(preferredEndHour, bedtimeHour);
+    const morningEndHour = Math.max(preferredStartHour, wakeHour);
+
     let day = new Date(from);
     day.setHours(0, 0, 0, 0);
     while (day < to) {
-      // Bedtime tonight
-      const bedtime = new Date(day);
-      bedtime.setHours(user.sleepSchedule.bedtimeHour, user.sleepSchedule.bedtimeMinute, 0, 0);
+      // Off-limits window tonight
+      const nightStart = new Date(day);
+      nightStart.setHours(nightStartHour, nightStartHour === bedtimeHour ? bedtimeMin : 0, 0, 0);
 
-      // Wake next morning
-      const wakeTime = new Date(day);
-      wakeTime.setDate(wakeTime.getDate() + 1);
-      wakeTime.setHours(user.sleepSchedule.wakeHour, user.sleepSchedule.wakeMinute, 0, 0);
+      const nextMorning = new Date(day);
+      nextMorning.setDate(nextMorning.getDate() + 1);
+      nextMorning.setHours(morningEndHour, morningEndHour === wakeHour ? wakeMin : 0, 0, 0);
 
       slots.push({
-        start: bedtime,
-        end: wakeTime,
-        durationMinutes: (wakeTime.getTime() - bedtime.getTime()) / 60000,
+        start: nightStart,
+        end: nextMorning,
+        durationMinutes: (nextMorning.getTime() - nightStart.getTime()) / 60000,
       });
 
       day.setDate(day.getDate() + 1);
@@ -290,7 +308,8 @@ export class SchedulingEngine {
   private nextDayStart(cursor: Date, user: IUser): Date {
     const next = new Date(cursor);
     next.setDate(next.getDate() + 1);
-    next.setHours(user.sleepSchedule.wakeHour, user.sleepSchedule.wakeMinute, 0, 0);
+    const startHour = Math.max(user.studyPreferences?.preferredStartHour ?? 9, user.sleepSchedule?.wakeHour ?? 7);
+    next.setHours(startHour, 0, 0, 0);
     return next;
   }
 }
