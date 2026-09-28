@@ -24,6 +24,18 @@ const SchedulePage = () => {
   const [viewMode, setViewMode] = useState<'timeline' | 'grid'>('timeline')
   const [showTour, setShowTour] = useState(false)
 
+  const days = Array.from({ length: 7 }, (_, i) => addDays(new Date(), i))
+  const weekStartStr = startOfDay(days[0]).toISOString()
+  const weekEndStr = endOfDay(days[6]).toISOString()
+
+  const { data: weekBlocks = [] } = useQuery({
+    queryKey: ['schedule-week', weekStartStr, weekEndStr],
+    queryFn: async (): Promise<ScheduleBlock[]> => {
+      const res = await api.get(`/schedule?from=${weekStartStr}&to=${weekEndStr}`)
+      return res.data.data
+    },
+  })
+
   const from = startOfDay(selectedDate).toISOString()
   const to = endOfDay(selectedDate).toISOString()
 
@@ -39,6 +51,7 @@ const SchedulePage = () => {
     mutationFn: () => api.post('/schedule/generate', { planDays: 7 }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['schedule'] })
+      qc.invalidateQueries({ queryKey: ['schedule-week'] })
       qc.invalidateQueries({ queryKey: ['schedule-today'] })
     },
   })
@@ -48,11 +61,18 @@ const SchedulePage = () => {
       api.put(`/schedule/block/${id}`, { startTime, endTime }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['schedule'] })
+      qc.invalidateQueries({ queryKey: ['schedule-week'] })
       qc.invalidateQueries({ queryKey: ['schedule-today'] })
     },
   })
 
-  const days = Array.from({ length: 7 }, (_, i) => addDays(new Date(), i))
+  const nextDayWithTasks = days.find((d) => {
+    if (format(d, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')) return false
+    const count = weekBlocks.filter(
+      (b) => format(parseISO(b.startTime), 'yyyy-MM-dd') === format(d, 'yyyy-MM-dd') && b.type === 'TASK'
+    ).length
+    return count > 0
+  })
 
   return (
     <IonPage>
@@ -162,17 +182,32 @@ const SchedulePage = () => {
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {days.map((day) => {
               const isSelected = format(day, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
+              const dayTaskCount = weekBlocks.filter(
+                (b) => format(parseISO(b.startTime), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd') && b.type === 'TASK'
+              ).length
+
               return (
                 <button
                   key={day.toISOString()}
                   onClick={() => setSelectedDate(day)}
-                  className={`flex flex-col items-center px-4 py-2.5 rounded-2xl transition-all shrink-0 min-w-[60px] border
+                  className={`flex flex-col items-center px-4 py-2.5 rounded-2xl transition-all shrink-0 min-w-[65px] border
                     ${isSelected
                       ? 'bg-brand-primary border-brand-primary text-white shadow-glow scale-[1.02]'
                       : 'glass-card border-white/5 text-text-secondary hover:text-text-primary hover:border-white/10'}`}
                 >
                   <span className="text-[11px] font-semibold uppercase">{format(day, 'EEE')}</span>
                   <span className="text-base font-extrabold mt-0.5">{format(day, 'd')}</span>
+                  {dayTaskCount > 0 && (
+                    <span
+                      className={`mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
+                        isSelected
+                          ? 'bg-white text-brand-primary border-white'
+                          : 'bg-brand-primary/20 text-brand-primary border-brand-primary/30'
+                      }`}
+                    >
+                      {dayTaskCount} {dayTaskCount === 1 ? 'task' : 'tasks'}
+                    </span>
+                  )}
                 </button>
               )
             })}
@@ -192,19 +227,46 @@ const SchedulePage = () => {
               {[...Array(5)].map((_, i) => <div key={i} className="skeleton h-20 rounded-2xl" />)}
             </div>
           ) : blocks.length === 0 ? (
-            <div className="glass-card-elevated p-10 text-center rounded-2xl border border-white/5">
-              <div className="text-5xl mb-3">📭</div>
-              <h3 className="font-bold text-text-primary text-lg mb-1">Nothing Scheduled</h3>
-              <p className="text-text-muted text-sm max-w-sm mx-auto mb-5">
-                No blocks scheduled for this day. Click "Generate AI Schedule" to automatically build your optimal timeline.
-              </p>
-              <button
-                onClick={() => generateMutation.mutate()}
-                disabled={generateMutation.isPending}
-                className="btn-primary py-2.5 px-5 text-xs font-semibold inline-flex items-center gap-2"
-              >
-                ⚡ Generate AI Schedule
-              </button>
+            <div className="glass-card-elevated p-8 text-center rounded-2xl border border-white/5 space-y-4">
+              <div className="text-5xl">🌙</div>
+              <div>
+                <h3 className="font-bold text-text-primary text-lg">No Study Blocks Scheduled Today</h3>
+                {nextDayWithTasks ? (
+                  <p className="text-text-muted text-xs mt-1">
+                    Your scheduled tasks are set for <strong className="text-brand-primary font-bold">{format(nextDayWithTasks, 'EEEE, MMMM d')}</strong>.
+                  </p>
+                ) : (
+                  <p className="text-text-muted text-xs mt-1 max-w-sm mx-auto">
+                    Click "Generate AI Schedule" to automatically build your optimal timeline across your open tasks.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-center gap-3 pt-1 flex-wrap">
+                {nextDayWithTasks && (
+                  <button
+                    onClick={() => setSelectedDate(nextDayWithTasks)}
+                    className="btn-primary py-2.5 px-4 text-xs font-semibold inline-flex items-center gap-2"
+                  >
+                    📅 View {format(nextDayWithTasks, 'EEE, MMM d')} (
+                    {
+                      weekBlocks.filter(
+                        (b) =>
+                          format(parseISO(b.startTime), 'yyyy-MM-dd') === format(nextDayWithTasks, 'yyyy-MM-dd') &&
+                          b.type === 'TASK'
+                      ).length
+                    }{' '}
+                    tasks)
+                  </button>
+                )}
+                <button
+                  onClick={() => generateMutation.mutate()}
+                  disabled={generateMutation.isPending}
+                  className="btn-secondary py-2.5 px-4 text-xs font-semibold inline-flex items-center gap-2"
+                >
+                  ⚡ Generate AI Schedule
+                </button>
+              </div>
             </div>
           ) : (
             <div className="relative space-y-2">
