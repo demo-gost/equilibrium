@@ -48,7 +48,7 @@ export class RescheduleService {
 
     // 2. Fetch remaining tasks
     const [tasks, user, existingBlocks] = await Promise.all([
-      Task.find({ userId, status: { $in: ['pending', 'in_progress'] } }),
+      Task.find({ userId, status: { $in: ['pending', 'in_progress', 'overdue'] } }),
       User.findById(userId),
       ScheduleBlock.find({
         userId,

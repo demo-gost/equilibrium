@@ -48,7 +48,7 @@ export class SchedulingEngine {
 
     // Score and sort tasks by urgency
     const scoredTasks = tasks
-      .filter((t) => ['pending', 'in_progress'].includes(t.status))
+      .filter((t) => ['pending', 'in_progress', 'overdue'].includes(t.status))
       .map((t) => ({ task: t, score: this.urgencyScore(t, fromTime) }))
       .sort((a, b) => b.score - a.score);
 

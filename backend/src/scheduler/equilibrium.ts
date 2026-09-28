@@ -59,7 +59,7 @@ export class EquilibriumEngine {
 
     const [user, tasks, blocks] = await Promise.all([
       User.findById(userId),
-      Task.find({ userId, status: { $in: ['pending', 'in_progress'] } }),
+      Task.find({ userId, status: { $in: ['pending', 'in_progress', 'overdue'] } }),
       ScheduleBlock.find({
         userId,
         startTime: { $lte: now },

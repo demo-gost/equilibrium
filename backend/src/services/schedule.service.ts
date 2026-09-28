@@ -16,7 +16,7 @@ export class ScheduleService {
 
     const [user, tasks, existingBlocks] = await Promise.all([
       User.findById(userId),
-      Task.find({ userId, status: { $in: ['pending', 'in_progress'] } }),
+      Task.find({ userId, status: { $in: ['pending', 'in_progress', 'overdue'] } }),
       ScheduleBlock.find({
         userId,
         startTime: { $gte: cancelFrom },
