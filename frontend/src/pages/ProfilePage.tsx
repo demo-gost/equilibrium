@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { IonContent, IonPage } from '@ionic/react'
 import { useIonRouter } from '@ionic/react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -17,14 +17,28 @@ const ProfilePage = () => {
   const [saved, setSaved] = useState(false)
 
   const [prefs, setPrefs] = useState({
-    dailyStudyLimitHours: user?.dailyStudyLimitHours || 8,
-    preferredStartHour: user?.studyPreferences?.preferredStartHour || 9,
-    preferredEndHour: user?.studyPreferences?.preferredEndHour || 22,
-    bedtimeHour: user?.sleepSchedule?.bedtimeHour || 23,
-    wakeHour: user?.sleepSchedule?.wakeHour || 7,
-    breakIntervalMinutes: user?.breakPreferences?.intervalMinutes || 90,
-    breakDurationMinutes: user?.breakPreferences?.durationMinutes || 15,
+    dailyStudyLimitHours: user?.dailyStudyLimitHours ?? 8,
+    preferredStartHour: user?.studyPreferences?.preferredStartHour ?? 9,
+    preferredEndHour: user?.studyPreferences?.preferredEndHour ?? 22,
+    bedtimeHour: user?.sleepSchedule?.bedtimeHour ?? 23,
+    wakeHour: user?.sleepSchedule?.wakeHour ?? 7,
+    breakIntervalMinutes: user?.breakPreferences?.intervalMinutes ?? 90,
+    breakDurationMinutes: user?.breakPreferences?.durationMinutes ?? 15,
   })
+
+  useEffect(() => {
+    if (user) {
+      setPrefs({
+        dailyStudyLimitHours: user.dailyStudyLimitHours ?? 8,
+        preferredStartHour: user.studyPreferences?.preferredStartHour ?? 9,
+        preferredEndHour: user.studyPreferences?.preferredEndHour ?? 22,
+        bedtimeHour: user.sleepSchedule?.bedtimeHour ?? 23,
+        wakeHour: user.sleepSchedule?.wakeHour ?? 7,
+        breakIntervalMinutes: user.breakPreferences?.intervalMinutes ?? 90,
+        breakDurationMinutes: user.breakPreferences?.durationMinutes ?? 15,
+      })
+    }
+  }, [user])
 
   const update = (k: string, v: unknown) => setPrefs((p) => ({ ...p, [k]: v }))
 
