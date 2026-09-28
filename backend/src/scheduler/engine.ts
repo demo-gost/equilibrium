@@ -223,33 +223,44 @@ export class SchedulingEngine {
   ): TimeSlot[] {
     const slots: TimeSlot[] = [];
 
-    const preferredStartHour = user.studyPreferences?.preferredStartHour ?? 9;
-    const preferredEndHour = user.studyPreferences?.preferredEndHour ?? 22;
-    const bedtimeHour = user.sleepSchedule?.bedtimeHour ?? 23;
-    const bedtimeMin = user.sleepSchedule?.bedtimeMinute ?? 0;
-    const wakeHour = user.sleepSchedule?.wakeHour ?? 7;
-    const wakeMin = user.sleepSchedule?.wakeMinute ?? 0;
+    let pStart = user.studyPreferences?.preferredStartHour ?? 9;
+    let pEnd = user.studyPreferences?.preferredEndHour ?? 22;
+    let bHour = user.sleepSchedule?.bedtimeHour ?? 23;
+    let bMin = user.sleepSchedule?.bedtimeMinute ?? 0;
+    let wHour = user.sleepSchedule?.wakeHour ?? 7;
+    let wMin = user.sleepSchedule?.wakeMinute ?? 0;
 
-    // Off-limits night hours (from study end / bedtime until next day study start / wake time)
-    const nightStartHour = Math.min(preferredEndHour, bedtimeHour);
-    const morningEndHour = Math.max(preferredStartHour, wakeHour);
+    // Sanity defaults to prevent invalid ranges from locking out the 24h day
+    if (typeof pStart !== 'number' || pStart < 0 || pStart > 23) pStart = 9;
+    if (typeof pEnd !== 'number' || pEnd < 0 || pEnd > 23) pEnd = 22;
+    if (pEnd <= pStart) {
+      pStart = 9;
+      pEnd = 22;
+    }
+    if (typeof bHour !== 'number' || bHour < 0 || bHour > 23) bHour = 23;
+    if (typeof wHour !== 'number' || wHour < 0 || wHour > 23) wHour = 7;
+
+    const nightStartHour = Math.min(pEnd, bHour);
+    const morningEndHour = Math.max(pStart, wHour);
 
     let day = new Date(from);
     day.setHours(0, 0, 0, 0);
     while (day < to) {
-      // Off-limits window tonight
       const nightStart = new Date(day);
-      nightStart.setHours(nightStartHour, nightStartHour === bedtimeHour ? bedtimeMin : 0, 0, 0);
+      nightStart.setHours(nightStartHour, nightStartHour === bHour ? bMin : 0, 0, 0);
 
       const nextMorning = new Date(day);
       nextMorning.setDate(nextMorning.getDate() + 1);
-      nextMorning.setHours(morningEndHour, morningEndHour === wakeHour ? wakeMin : 0, 0, 0);
+      nextMorning.setHours(morningEndHour, morningEndHour === wHour ? wMin : 0, 0, 0);
 
-      slots.push({
-        start: nightStart,
-        end: nextMorning,
-        durationMinutes: (nextMorning.getTime() - nightStart.getTime()) / 60000,
-      });
+      const duration = (nextMorning.getTime() - nightStart.getTime()) / 60000;
+      if (duration > 0 && duration < 24 * 60) {
+        slots.push({
+          start: nightStart,
+          end: nextMorning,
+          durationMinutes: duration,
+        });
+      }
 
       day.setDate(day.getDate() + 1);
     }
@@ -258,8 +269,8 @@ export class SchedulingEngine {
     for (const block of existingBlocks) {
       if (['COLLEGE', 'PERSONAL', 'SLEEP'].includes(block.type) && block.isProtected) {
         slots.push({
-          start: block.startTime,
-          end: block.endTime,
+          start: new Date(block.startTime),
+          end: new Date(block.endTime),
           durationMinutes: block.scheduledDurationMinutes,
         });
       }

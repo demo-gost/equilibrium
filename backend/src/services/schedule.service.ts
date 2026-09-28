@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Task } from '../models/Task';
 import { User } from '../models/User';
 import { ScheduleBlock } from '../models/ScheduleBlock';
@@ -14,11 +15,16 @@ export class ScheduleService {
     const cancelFrom = new Date(now);
     cancelFrom.setHours(0, 0, 0, 0);
 
+    const userObjId = mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : userId;
+
     const [user, tasks, existingBlocks] = await Promise.all([
       User.findById(userId),
-      Task.find({ userId, status: { $in: ['pending', 'in_progress', 'overdue'] } }),
+      Task.find({
+        userId: { $in: [userId, userObjId] },
+        status: { $in: ['pending', 'in_progress', 'overdue'] },
+      }),
       ScheduleBlock.find({
-        userId,
+        userId: { $in: [userId, userObjId] },
         startTime: { $gte: cancelFrom },
         isProtected: true,
       }),
