@@ -47,12 +47,34 @@ const SchedulePage = () => {
     },
   })
 
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+
   const generateMutation = useMutation({
     mutationFn: () => api.post('/schedule/generate', { planDays: 7 }),
-    onSuccess: () => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['schedule'] })
       qc.invalidateQueries({ queryKey: ['schedule-week'] })
       qc.invalidateQueries({ queryKey: ['schedule-today'] })
+
+      const generatedBlocks = res.data?.data?.blocks || []
+      const taskBlocks = generatedBlocks.filter((b: any) => b.type === 'TASK')
+
+      if (taskBlocks.length > 0) {
+        const firstDate = parseISO(taskBlocks[0].startTime)
+        setSelectedDate(firstDate)
+        setToastMessage(
+          `⚡ Schedule generated! ${taskBlocks.length} task blocks created starting ${format(firstDate, 'EEE, MMM d')}.`
+        )
+      } else {
+        setToastMessage('⚠️ No open tasks found to schedule.')
+      }
+
+      setTimeout(() => setToastMessage(null), 5000)
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || err.message || 'Failed to generate schedule'
+      setToastMessage(`❌ Error: ${msg}`)
+      setTimeout(() => setToastMessage(null), 5000)
     },
   })
 
@@ -106,6 +128,18 @@ const SchedulePage = () => {
               {generateMutation.isPending ? 'Generating Schedule...' : 'Generate AI Schedule'}
             </button>
           </div>
+
+          {toastMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="p-3.5 rounded-xl bg-brand-primary/20 border border-brand-primary/40 text-text-primary text-xs font-semibold flex items-center justify-between shadow-lg"
+            >
+              <span>{toastMessage}</span>
+              <button onClick={() => setToastMessage(null)} className="text-text-muted hover:text-text-primary ml-2 font-bold">✕</button>
+            </motion.div>
+          )}
 
           {/* Action Toolbar & View Mode Selector */}
           <div className="flex flex-wrap items-center justify-between gap-3 glass-card p-3 rounded-2xl border border-white/5">
