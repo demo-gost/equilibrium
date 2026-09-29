@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { IonModal, IonContent } from '@ionic/react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
@@ -25,35 +25,50 @@ const CATEGORIES: { value: TaskCategory; label: string; icon: string }[] = [
   { value: 'other', label: 'Other', icon: '📌' },
 ]
 
+const toLocalISOString = (dateStr?: string) => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return ''
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
 const TaskFormModal = ({ isOpen, task, onClose, onSaved }: Props) => {
   const qc = useQueryClient()
   const [form, setForm] = useState({
-    title: task?.title || '',
-    description: task?.description || '',
-    category: task?.category || 'other' as TaskCategory,
-    priority: task?.priority || 3,
-    difficulty: task?.difficulty || 3,
-    estimatedDurationMinutes: task?.estimatedDurationMinutes || 60,
-    deadline: task?.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : '',
-    isRecurring: task?.isRecurring || false,
-    recurrencePattern: task?.recurrencePattern || 'none',
+    title: '',
+    description: '',
+    category: 'other' as TaskCategory,
+    priority: 3,
+    difficulty: 3,
+    estimatedDurationMinutes: 60,
+    deadline: '',
+    isRecurring: false,
+    recurrencePattern: 'none' as 'none' | 'daily' | 'weekly' | 'weekdays' | 'monthly',
   })
   const [error, setError] = useState('')
 
-  // Reset when task changes
-  useState(() => {
-    setForm({
-      title: task?.title || '',
-      description: task?.description || '',
-      category: task?.category || 'other',
-      priority: task?.priority || 3,
-      difficulty: task?.difficulty || 3,
-      estimatedDurationMinutes: task?.estimatedDurationMinutes || 60,
-      deadline: task?.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : '',
-      isRecurring: task?.isRecurring || false,
-      recurrencePattern: task?.recurrencePattern || 'none',
-    })
-  })
+  // Sync form state whenever modal opens or target task changes
+  useEffect(() => {
+    if (isOpen) {
+      setForm({
+        title: task?.title || '',
+        description: task?.description || '',
+        category: task?.category || ('other' as TaskCategory),
+        priority: task?.priority || 3,
+        difficulty: task?.difficulty || 3,
+        estimatedDurationMinutes: task?.estimatedDurationMinutes || 60,
+        deadline: toLocalISOString(task?.deadline),
+        isRecurring: task?.isRecurring || false,
+        recurrencePattern: task?.recurrencePattern || 'none',
+      })
+      setError('')
+    }
+  }, [task, isOpen])
 
   const update = (k: string, v: unknown) => setForm((f) => ({ ...f, [k]: v }))
 
