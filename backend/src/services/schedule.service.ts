@@ -79,8 +79,8 @@ export class ScheduleService {
   async getSchedule(userId: string, from: Date, to: Date) {
     const blocks = await ScheduleBlock.find({
       userId,
-      startTime: { $gte: from },
-      endTime: { $lte: to },
+      startTime: { $lt: to },
+      endTime: { $gt: from },
       status: { $ne: 'cancelled' },
     })
       .populate('taskId', 'title category priority difficulty deadline status')

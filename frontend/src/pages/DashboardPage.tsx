@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { IonContent, IonPage, IonRefresher, IonRefresherContent } from '@ionic/react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, startOfDay, endOfDay } from 'date-fns'
 import api from '../lib/api'
 import { useAuthStore } from '../store/auth.store'
 import { useThemeStore } from '../store/theme.store'
@@ -14,7 +14,10 @@ import InsightCard from '../components/InsightCard'
 import { OnboardingTour } from '../components/OnboardingTour'
 
 const fetchTodaySchedule = async (): Promise<ScheduleBlock[]> => {
-  const res = await api.get('/schedule/today')
+  const now = new Date()
+  const from = startOfDay(now).toISOString()
+  const to = endOfDay(now).toISOString()
+  const res = await api.get(`/schedule?from=${from}&to=${to}`)
   return res.data.data
 }
 
@@ -30,8 +33,8 @@ const fetchInsights = async (): Promise<string[]> => {
 
 const BLOCK_STYLES: Record<string, { bg: string; dot: string; label: string }> = {
   TASK:     { bg: 'bg-brand-primary/10 border-brand-primary/20 text-text-primary', dot: 'bg-brand-primary', label: '📚' },
-  BREAK:    { bg: 'bg-status-success/8 border-status-success/15 text-text-secondary', dot: 'bg-status-success', label: '☕' },
-  BUFFER:   { bg: 'bg-white/3 border-white/6 text-text-muted', dot: 'bg-white/20', label: '🔄' },
+  BREAK:    { bg: 'bg-status-success/10 border-status-success/20 text-text-secondary', dot: 'bg-status-success', label: '☕' },
+  BUFFER:   { bg: 'bg-white/5 border-white/10 text-text-muted', dot: 'bg-white/20', label: '🔄' },
   SLEEP:    { bg: 'bg-blue-950/30 border-blue-800/20 text-blue-300', dot: 'bg-blue-400', label: '🌙' },
   COLLEGE:  { bg: 'bg-orange-950/30 border-orange-800/20 text-orange-300', dot: 'bg-orange-400', label: '🎓' },
   PERSONAL: { bg: 'bg-purple-950/30 border-purple-800/20 text-purple-300', dot: 'bg-purple-400', label: '🏠' },

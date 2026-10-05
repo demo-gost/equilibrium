@@ -36,7 +36,20 @@ export const getSchedule = async (req: AuthRequest, res: Response, next: NextFun
 
 export const getTodaySchedule = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const blocks = await scheduleService.getTodaySchedule(req.user!.userId);
+    const { from, to } = req.query;
+    let fromDate: Date;
+    let toDate: Date;
+    if (from && to) {
+      fromDate = new Date(from as string);
+      toDate = new Date(to as string);
+    } else {
+      const now = new Date();
+      fromDate = new Date(now);
+      fromDate.setHours(0, 0, 0, 0);
+      toDate = new Date(now);
+      toDate.setHours(23, 59, 59, 999);
+    }
+    const blocks = await scheduleService.getSchedule(req.user!.userId, fromDate, toDate);
     res.json(successResponse(blocks));
   } catch (error) {
     next(error);
