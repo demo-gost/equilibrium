@@ -55,6 +55,53 @@ export class SchedulingEngine {
     // Build protected time slots (sleep + existing blocks)
     const protectedSlots = this.buildProtectedSlots(user, existingBlocks, fromTime, horizon);
 
+    // 1. Generate visible SLEEP blocks for each day in the plan horizon
+    const bHour = user.sleepSchedule?.bedtimeHour ?? 23;
+    const bMin = user.sleepSchedule?.bedtimeMinute ?? 0;
+    const wHour = user.sleepSchedule?.wakeHour ?? 7;
+    const wMin = user.sleepSchedule?.wakeMinute ?? 0;
+
+    let sleepCursor = new Date(fromTime);
+    sleepCursor.setHours(0, 0, 0, 0);
+    while (sleepCursor < horizon) {
+      const bedtime = new Date(sleepCursor);
+      bedtime.setHours(bHour, bMin, 0, 0);
+
+      const wakeTime = new Date(sleepCursor);
+      wakeTime.setDate(wakeTime.getDate() + 1);
+      wakeTime.setHours(wHour, wMin, 0, 0);
+
+      if (wakeTime > fromTime && bedtime < horizon) {
+        const sStart = bedtime < fromTime ? fromTime : bedtime;
+        const dur = Math.round((wakeTime.getTime() - sStart.getTime()) / 60000);
+        if (dur > 0) {
+          newBlocks.push({
+            userId: user._id,
+            startTime: sStart,
+            endTime: wakeTime,
+            scheduledDurationMinutes: dur,
+            type: 'SLEEP' as BlockType,
+            status: 'scheduled',
+            isProtected: false,
+            reason: '🌙 Sleep Schedule',
+          });
+        }
+      }
+
+      sleepCursor.setDate(sleepCursor.getDate() + 1);
+    }
+
+    // Determine break preferences based on Focus Mode
+    let breakInterval = user.breakPreferences?.intervalMinutes ?? 90;
+    let breakDuration = user.breakPreferences?.durationMinutes ?? 15;
+    if (user.studyPreferences?.focusMode === 'pomodoro') {
+      breakInterval = 25;
+      breakDuration = 5;
+    } else if (user.studyPreferences?.focusMode === 'deep') {
+      breakInterval = 90;
+      breakDuration = 15;
+    }
+
     // Track allocated study minutes per day
     const dailyStudyMinutes: Map<string, number> = new Map();
     const dailyLimitMinutes = user.dailyStudyLimitHours * 60;
@@ -95,10 +142,10 @@ export class SchedulingEngine {
         // Check if we need a break
         if (
           lastStudyEnd &&
-          continuousStudyMinutes >= user.breakPreferences.intervalMinutes
+          continuousStudyMinutes >= breakInterval
         ) {
           const breakEnd = new Date(
-            planningCursor.getTime() + user.breakPreferences.durationMinutes * 60000
+            planningCursor.getTime() + breakDuration * 60000
           );
           // Only insert break if within available window
           if (!this.overlapsProtected(planningCursor, breakEnd, protectedSlots)) {
@@ -106,10 +153,10 @@ export class SchedulingEngine {
               userId: task.userId,
               startTime: new Date(planningCursor),
               endTime: breakEnd,
-              scheduledDurationMinutes: user.breakPreferences.durationMinutes,
+              scheduledDurationMinutes: breakDuration,
               type: 'BREAK' as BlockType,
               status: 'scheduled',
-              reason: 'Auto-inserted break after study interval',
+              reason: `Auto break (${user.studyPreferences?.focusMode || 'standard'} mode)`,
             });
             planningCursor = breakEnd;
             continuousStudyMinutes = 0;
