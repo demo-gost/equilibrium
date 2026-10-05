@@ -52,15 +52,15 @@ export class SchedulingEngine {
       .map((t) => ({ task: t, score: this.urgencyScore(t, fromTime) }))
       .sort((a, b) => b.score - a.score);
 
-    // Build protected time slots (sleep + existing blocks)
-    const protectedSlots = this.buildProtectedSlots(user, existingBlocks, fromTime, horizon);
-
-    // 1. Generate visible SLEEP blocks for each day in the plan horizon
     const bHour = user.sleepSchedule?.bedtimeHour ?? 23;
     const bMin = user.sleepSchedule?.bedtimeMinute ?? 0;
     const wHour = user.sleepSchedule?.wakeHour ?? 7;
     const wMin = user.sleepSchedule?.wakeMinute ?? 0;
 
+    // Build protected time slots (sleep + quiet non-study hours + existing blocks)
+    const protectedSlots = this.buildProtectedSlots(user, existingBlocks, fromTime, horizon);
+
+    // 1. Generate visible SLEEP blocks for each day in the plan horizon
     let sleepCursor = new Date(fromTime);
     sleepCursor.setHours(0, 0, 0, 0);
     while (sleepCursor < horizon) {
@@ -68,13 +68,15 @@ export class SchedulingEngine {
       bedtime.setHours(bHour, bMin, 0, 0);
 
       const wakeTime = new Date(sleepCursor);
-      wakeTime.setDate(wakeTime.getDate() + 1);
+      if (bHour >= wHour) {
+        wakeTime.setDate(wakeTime.getDate() + 1);
+      }
       wakeTime.setHours(wHour, wMin, 0, 0);
 
       if (wakeTime > fromTime && bedtime < horizon) {
         const sStart = bedtime < fromTime ? fromTime : bedtime;
         const dur = Math.round((wakeTime.getTime() - sStart.getTime()) / 60000);
-        if (dur > 0) {
+        if (dur > 0 && dur <= 24 * 60) {
           newBlocks.push({
             userId: user._id,
             startTime: sStart,
@@ -287,25 +289,40 @@ export class SchedulingEngine {
     if (typeof bHour !== 'number' || bHour < 0 || bHour > 23) bHour = 23;
     if (typeof wHour !== 'number' || wHour < 0 || wHour > 23) wHour = 7;
 
-    const nightStartHour = Math.min(pEnd, bHour);
-    const morningEndHour = Math.max(pStart, wHour);
-
     let day = new Date(from);
     day.setHours(0, 0, 0, 0);
     while (day < to) {
-      const nightStart = new Date(day);
-      nightStart.setHours(nightStartHour, nightStartHour === bHour ? bMin : 0, 0, 0);
+      // 1. Off-limits Sleep interval for this date
+      const bedtime = new Date(day);
+      bedtime.setHours(bHour, bMin, 0, 0);
 
-      const nextMorning = new Date(day);
-      nextMorning.setDate(nextMorning.getDate() + 1);
-      nextMorning.setHours(morningEndHour, morningEndHour === wHour ? wMin : 0, 0, 0);
+      const wakeTime = new Date(day);
+      if (bHour >= wHour) {
+        wakeTime.setDate(wakeTime.getDate() + 1);
+      }
+      wakeTime.setHours(wHour, wMin, 0, 0);
 
-      const duration = (nextMorning.getTime() - nightStart.getTime()) / 60000;
-      if (duration > 0 && duration < 24 * 60) {
+      if (wakeTime > bedtime) {
         slots.push({
-          start: nightStart,
-          end: nextMorning,
-          durationMinutes: duration,
+          start: bedtime,
+          end: wakeTime,
+          durationMinutes: (wakeTime.getTime() - bedtime.getTime()) / 60000,
+        });
+      }
+
+      // 2. Off-limits quiet non-study hours (study end to next morning study start)
+      const quietStart = new Date(day);
+      quietStart.setHours(pEnd, 0, 0, 0);
+
+      const quietEnd = new Date(day);
+      quietEnd.setDate(quietEnd.getDate() + 1);
+      quietEnd.setHours(pStart, 0, 0, 0);
+
+      if (quietEnd > quietStart) {
+        slots.push({
+          start: quietStart,
+          end: quietEnd,
+          durationMinutes: (quietEnd.getTime() - quietStart.getTime()) / 60000,
         });
       }
 
