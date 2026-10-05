@@ -13,13 +13,6 @@ import WorkloadMeter from '../components/WorkloadMeter'
 import InsightCard from '../components/InsightCard'
 import { OnboardingTour } from '../components/OnboardingTour'
 
-const fetchTodaySchedule = async (): Promise<ScheduleBlock[]> => {
-  const now = new Date()
-  const from = startOfDay(now).toISOString()
-  const to = endOfDay(now).toISOString()
-  const res = await api.get(`/schedule?from=${from}&to=${to}`)
-  return res.data.data
-}
 
 const fetchAnalytics = async (): Promise<AnalyticsSummary> => {
   const res = await api.get('/analytics/summary')
@@ -56,19 +49,33 @@ const DashboardPage = () => {
   const { theme, setTheme } = useThemeStore()
   const { checkTaskDeadlines } = useNotifications()
 
+  const now = new Date()
+  const from = startOfDay(now).toISOString()
+  const to = endOfDay(now).toISOString()
+
   const { data: schedule = [], refetch: refetchSchedule } = useQuery({
-    queryKey: ['schedule-today'],
-    queryFn: fetchTodaySchedule,
+    queryKey: ['schedule', from, to],
+    queryFn: async (): Promise<ScheduleBlock[]> => {
+      const res = await api.get(`/schedule?from=${from}&to=${to}`)
+      const raw = res.data.data
+      return Array.isArray(raw) ? raw : (raw?.blocks || [])
+    },
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 
   const { data: analytics } = useQuery({
     queryKey: ['analytics-summary'],
     queryFn: fetchAnalytics,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 
   const { data: insights = [] } = useQuery({
     queryKey: ['insights'],
     queryFn: fetchInsights,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 
   useEffect(() => {
