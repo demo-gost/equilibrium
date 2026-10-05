@@ -77,13 +77,20 @@ export class ScheduleService {
   }
 
   async getSchedule(userId: string, from: Date, to: Date) {
+    const userObjId = mongoose.Types.ObjectId.isValid(userId)
+      ? new mongoose.Types.ObjectId(userId)
+      : null;
+    const userIdFilter = userObjId
+      ? { $in: [userId, userObjId] }
+      : userId;
+
     const blocks = await ScheduleBlock.find({
-      userId,
+      userId: userIdFilter,
       startTime: { $lt: to },
       endTime: { $gt: from },
       status: { $ne: 'cancelled' },
     })
-      .populate('taskId', 'title category priority difficulty deadline status')
+      .populate('taskId', 'title category priority difficulty deadline status estimatedDurationMinutes predictedDurationMinutes')
       .sort({ startTime: 1 });
 
     return blocks;
