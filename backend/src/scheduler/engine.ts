@@ -1,6 +1,7 @@
 import { ITask } from '../models/Task';
 import { IUser } from '../models/User';
 import { ScheduleBlock, IScheduleBlock, BlockType } from '../models/ScheduleBlock';
+import { makeZonedDate, getZonedParts } from '../utils/timezone';
 import logger from '../utils/logger';
 
 export interface TimeSlot {
@@ -52,6 +53,7 @@ export class SchedulingEngine {
       .map((t) => ({ task: t, score: this.urgencyScore(t, fromTime) }))
       .sort((a, b) => b.score - a.score);
 
+    const timeZone = user.timezone || 'UTC';
     const bHour = user.sleepSchedule?.bedtimeHour ?? 23;
     const bMin = user.sleepSchedule?.bedtimeMinute ?? 0;
     const wHour = user.sleepSchedule?.wakeHour ?? 7;
@@ -61,18 +63,19 @@ export class SchedulingEngine {
     const protectedSlots = this.buildProtectedSlots(user, existingBlocks, fromTime, horizon);
 
     // 1. Generate visible SLEEP blocks for each day in the plan horizon
-    let sleepCursor = new Date(fromTime);
-    sleepCursor.setDate(sleepCursor.getDate() - 1);
-    sleepCursor.setHours(0, 0, 0, 0);
-    while (sleepCursor < horizon) {
-      const bedtime = new Date(sleepCursor);
-      bedtime.setHours(bHour, bMin, 0, 0);
+    const fromParts = getZonedParts(fromTime, timeZone);
+    let sYear = fromParts.year;
+    let sMonth = fromParts.month;
+    let sDay = fromParts.day - 1;
 
-      const wakeTime = new Date(sleepCursor);
-      if (bHour >= wHour) {
-        wakeTime.setDate(wakeTime.getDate() + 1);
-      }
-      wakeTime.setHours(wHour, wMin, 0, 0);
+    let sleepCursor = makeZonedDate(sYear, sMonth, sDay, 0, 0, 0, timeZone);
+    while (sleepCursor < horizon) {
+      const cParts = getZonedParts(sleepCursor, timeZone);
+      const bedtime = makeZonedDate(cParts.year, cParts.month, cParts.day, bHour, bMin, 0, timeZone);
+
+      const wakeTime = bHour >= wHour
+        ? makeZonedDate(cParts.year, cParts.month, cParts.day + 1, wHour, wMin, 0, timeZone)
+        : makeZonedDate(cParts.year, cParts.month, cParts.day, wHour, wMin, 0, timeZone);
 
       if (wakeTime > fromTime && bedtime < horizon) {
         const sStart = bedtime < fromTime ? fromTime : bedtime;
@@ -91,7 +94,8 @@ export class SchedulingEngine {
         }
       }
 
-      sleepCursor.setDate(sleepCursor.getDate() + 1);
+      sDay++;
+      sleepCursor = makeZonedDate(sYear, sMonth, sDay, 0, 0, 0, timeZone);
     }
 
     // Determine break preferences based on Focus Mode
@@ -273,6 +277,7 @@ export class SchedulingEngine {
   ): TimeSlot[] {
     const slots: TimeSlot[] = [];
 
+    const timeZone = user.timezone || 'UTC';
     let pStart = user.studyPreferences?.preferredStartHour ?? 9;
     let pEnd = user.studyPreferences?.preferredEndHour ?? 22;
     let bHour = user.sleepSchedule?.bedtimeHour ?? 23;
@@ -290,19 +295,21 @@ export class SchedulingEngine {
     if (typeof bHour !== 'number' || bHour < 0 || bHour > 23) bHour = 23;
     if (typeof wHour !== 'number' || wHour < 0 || wHour > 23) wHour = 7;
 
-    let day = new Date(from);
-    day.setDate(day.getDate() - 1);
-    day.setHours(0, 0, 0, 0);
-    while (day < to) {
-      // 1. Off-limits Sleep interval for this date
-      const bedtime = new Date(day);
-      bedtime.setHours(bHour, bMin, 0, 0);
+    const fromParts = getZonedParts(from, timeZone);
+    let curYear = fromParts.year;
+    let curMonth = fromParts.month;
+    let curDay = fromParts.day - 1;
 
-      const wakeTime = new Date(day);
-      if (bHour >= wHour) {
-        wakeTime.setDate(wakeTime.getDate() + 1);
-      }
-      wakeTime.setHours(wHour, wMin, 0, 0);
+    let day = makeZonedDate(curYear, curMonth, curDay, 0, 0, 0, timeZone);
+    while (day < to) {
+      const cParts = getZonedParts(day, timeZone);
+
+      // 1. Off-limits Sleep interval for this date
+      const bedtime = makeZonedDate(cParts.year, cParts.month, cParts.day, bHour, bMin, 0, timeZone);
+
+      const wakeTime = bHour >= wHour
+        ? makeZonedDate(cParts.year, cParts.month, cParts.day + 1, wHour, wMin, 0, timeZone)
+        : makeZonedDate(cParts.year, cParts.month, cParts.day, wHour, wMin, 0, timeZone);
 
       if (wakeTime > bedtime) {
         slots.push({
@@ -313,12 +320,8 @@ export class SchedulingEngine {
       }
 
       // 2. Off-limits quiet non-study hours (study end to next morning study start)
-      const quietStart = new Date(day);
-      quietStart.setHours(pEnd, 0, 0, 0);
-
-      const quietEnd = new Date(day);
-      quietEnd.setDate(quietEnd.getDate() + 1);
-      quietEnd.setHours(pStart, 0, 0, 0);
+      const quietStart = makeZonedDate(cParts.year, cParts.month, cParts.day, pEnd, 0, 0, timeZone);
+      const quietEnd = makeZonedDate(cParts.year, cParts.month, cParts.day + 1, pStart, 0, 0, timeZone);
 
       if (quietEnd > quietStart) {
         slots.push({
@@ -328,7 +331,8 @@ export class SchedulingEngine {
         });
       }
 
-      day.setDate(day.getDate() + 1);
+      curDay++;
+      day = makeZonedDate(curYear, curMonth, curDay, 0, 0, 0, timeZone);
     }
 
     // Existing protected blocks (COLLEGE, PERSONAL, SLEEP)
@@ -385,11 +389,10 @@ export class SchedulingEngine {
   }
 
   private nextDayStart(cursor: Date, user: IUser): Date {
-    const next = new Date(cursor);
-    next.setDate(next.getDate() + 1);
+    const timeZone = user.timezone || 'UTC';
+    const cParts = getZonedParts(cursor, timeZone);
     const startHour = Math.max(user.studyPreferences?.preferredStartHour ?? 9, user.sleepSchedule?.wakeHour ?? 7);
-    next.setHours(startHour, 0, 0, 0);
-    return next;
+    return makeZonedDate(cParts.year, cParts.month, cParts.day + 1, startHour, 0, 0, timeZone);
   }
 }
 

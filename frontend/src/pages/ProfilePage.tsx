@@ -46,6 +46,7 @@ const ProfilePage = () => {
     setSaving(true)
     try {
       const res = await api.put('/auth/me', {
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         dailyStudyLimitHours: prefs.dailyStudyLimitHours,
         studyPreferences: {
           preferredStartHour: prefs.preferredStartHour,
