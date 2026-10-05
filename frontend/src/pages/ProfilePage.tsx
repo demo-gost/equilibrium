@@ -65,6 +65,8 @@ const ProfilePage = () => {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
       qc.invalidateQueries({ queryKey: ['schedule'] })
+      qc.invalidateQueries({ queryKey: ['schedule-week'] })
+      qc.invalidateQueries({ queryKey: ['schedule-today'] })
     } finally {
       setSaving(false)
     }

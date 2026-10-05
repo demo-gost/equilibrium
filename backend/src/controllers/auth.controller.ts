@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/auth.service';
+import { rescheduleService } from '../scheduler/reschedule';
 import { AuthRequest } from '../middleware/auth';
 import { successResponse } from '../utils/response';
 
@@ -57,6 +58,8 @@ export const getProfile = async (req: AuthRequest, res: Response, next: NextFunc
 export const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const user = await authService.updateProfile(req.user!.userId, req.body);
+    // Trigger dynamic rescheduling with updated sleep / study preferences
+    rescheduleService.reschedule(req.user!.userId, 'availability_changed').catch(() => {});
     res.json(successResponse(user, 'Profile updated'));
   } catch (error) {
     next(error);

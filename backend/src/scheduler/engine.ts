@@ -62,6 +62,7 @@ export class SchedulingEngine {
 
     // 1. Generate visible SLEEP blocks for each day in the plan horizon
     let sleepCursor = new Date(fromTime);
+    sleepCursor.setDate(sleepCursor.getDate() - 1);
     sleepCursor.setHours(0, 0, 0, 0);
     while (sleepCursor < horizon) {
       const bedtime = new Date(sleepCursor);
@@ -290,6 +291,7 @@ export class SchedulingEngine {
     if (typeof wHour !== 'number' || wHour < 0 || wHour > 23) wHour = 7;
 
     let day = new Date(from);
+    day.setDate(day.getDate() - 1);
     day.setHours(0, 0, 0, 0);
     while (day < to) {
       // 1. Off-limits Sleep interval for this date

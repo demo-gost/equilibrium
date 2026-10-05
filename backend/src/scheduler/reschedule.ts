@@ -39,7 +39,7 @@ export class RescheduleService {
       {
         userId,
         startTime: { $gte: now },
-        type: { $in: ['TASK', 'BUFFER', 'BREAK'] },
+        type: { $in: ['TASK', 'BUFFER', 'BREAK', 'SLEEP'] },
         status: { $in: ['scheduled'] },
         isProtected: false,
       },
