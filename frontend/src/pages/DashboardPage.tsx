@@ -28,14 +28,25 @@ const fetchInsights = async (): Promise<string[]> => {
   return res.data.data
 }
 
-const blockColors: Record<string, string> = {
-  TASK: 'bg-brand-primary/20 border-brand-primary/30 text-brand-primary',
-  BREAK: 'bg-status-success/15 border-status-success/20 text-status-success',
-  BUFFER: 'bg-white/5 border-white/10 text-text-muted',
-  SLEEP: 'bg-blue-900/20 border-blue-500/20 text-blue-400',
-  COLLEGE: 'bg-orange-500/15 border-orange-500/20 text-orange-400',
-  PERSONAL: 'bg-purple-500/15 border-purple-500/20 text-purple-400',
+const BLOCK_STYLES: Record<string, { bg: string; dot: string; label: string }> = {
+  TASK:     { bg: 'bg-brand-primary/10 border-brand-primary/20 text-text-primary', dot: 'bg-brand-primary', label: '📚' },
+  BREAK:    { bg: 'bg-status-success/8 border-status-success/15 text-text-secondary', dot: 'bg-status-success', label: '☕' },
+  BUFFER:   { bg: 'bg-white/3 border-white/6 text-text-muted', dot: 'bg-white/20', label: '🔄' },
+  SLEEP:    { bg: 'bg-blue-950/30 border-blue-800/20 text-blue-300', dot: 'bg-blue-400', label: '🌙' },
+  COLLEGE:  { bg: 'bg-orange-950/30 border-orange-800/20 text-orange-300', dot: 'bg-orange-400', label: '🎓' },
+  PERSONAL: { bg: 'bg-purple-950/30 border-purple-800/20 text-purple-300', dot: 'bg-purple-400', label: '🏠' },
 }
+
+const MotionCard = ({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay, duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+    className={className}
+  >
+    {children}
+  </motion.div>
+)
 
 const DashboardPage = () => {
   const { user } = useAuthStore()
@@ -90,151 +101,148 @@ const DashboardPage = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        <div className="max-w-2xl mx-auto px-4 pt-12 pb-24">
-          {/* Header */}
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-start justify-between mb-6">
+        <div className="page-container">
+          {/* ── Header ─────────────────────────────────────────── */}
+          <MotionCard className="flex items-start justify-between mb-8">
             <div>
-              <p className="text-text-muted text-sm">{greeting()},</p>
-              <h1 className="text-2xl font-bold text-text-primary">{user?.name?.split(' ')[0]} 👋</h1>
-              <p className="text-text-muted text-xs mt-0.5">{format(now, 'EEEE, MMMM d')}</p>
+              <p className="text-xs font-medium text-text-muted uppercase tracking-widest mb-1">
+                {format(now, 'EEEE, MMMM d')}
+              </p>
+              <h1 className="page-title">
+                {greeting()}, {user?.name?.split(' ')[0]}
+              </h1>
             </div>
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="btn-secondary py-2 px-3 text-sm rounded-xl shrink-0"
-              title="Toggle Light / Dark Theme"
+              className="btn-secondary !p-2.5 !min-h-0 rounded-xl text-lg leading-none"
+              title="Toggle theme"
+              aria-label="Toggle light and dark theme"
             >
-              {theme === 'dark' ? '🌙' : '☀️'}
+              {theme === 'dark' ? '☀️' : '🌙'}
             </button>
-          </motion.div>
+          </MotionCard>
 
-          {/* Metrics Row */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="grid grid-cols-3 gap-3 mb-6"
-          >
+          {/* ── Metrics ────────────────────────────────────────── */}
+          <MotionCard delay={0.05} className="grid grid-cols-3 gap-3 mb-6">
             <div className="metric-card">
               <div className="metric-label">Remaining</div>
               <div className="metric-value text-status-warning">{totalToday - completedToday}</div>
-              <div className="text-xs text-text-muted">of {totalToday} tasks</div>
+              <div className="text-xs text-text-muted">of {totalToday}</div>
             </div>
             <div className="metric-card">
-              <div className="metric-label">Completed</div>
+              <div className="metric-label">Done</div>
               <div className="metric-value text-status-success">{completedToday}</div>
               <div className="text-xs text-text-muted">today</div>
             </div>
             <div className="metric-card">
               <div className="metric-label">Planned</div>
               <div className="metric-value text-brand-accent">{hoursPlanned.toFixed(1)}h</div>
-              <div className="text-xs text-text-muted">study time</div>
+              <div className="text-xs text-text-muted">study</div>
             </div>
-          </motion.div>
+          </MotionCard>
 
-          {/* Workload Meter */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="mb-6"
-          >
+          {/* ── Workload Meter ──────────────────────────────────── */}
+          <MotionCard delay={0.1} className="mb-6">
             <WorkloadMeter
               plannedHours={hoursPlanned}
               limitHours={user?.dailyStudyLimitHours || 8}
               vibeScore={analytics?.latestVibeScore}
             />
-          </motion.div>
+          </MotionCard>
 
-          {/* Next Task */}
+          {/* ── Next Task ───────────────────────────────────────── */}
           {nextBlock && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="glass-card-elevated p-5 mb-6 border-l-4 border-brand-primary"
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <div className="pulse-dot" />
-                <span className="text-xs text-text-muted uppercase tracking-wider">Next up</span>
+            <MotionCard delay={0.15} className="mb-6">
+              <div className="glass-card-elevated p-5 border-l-[3px] border-brand-primary">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="pulse-dot" />
+                  <span className="text-[11px] font-semibold text-text-muted uppercase tracking-widest">Up next</span>
+                </div>
+                <h3 className="font-semibold text-lg text-text-primary leading-tight mb-2">
+                  {(nextTask as Task)?.title || 'Task'}
+                </h3>
+                <div className="flex items-center gap-4 text-sm text-text-secondary flex-wrap">
+                  <span>🕐 {format(parseISO(nextBlock.startTime), 'h:mm a')}</span>
+                  <span>⏱ {nextBlock.scheduledDurationMinutes}min</span>
+                  {(nextTask as Task)?.category && (
+                    <span className="capitalize">📂 {(nextTask as Task).category}</span>
+                  )}
+                </div>
+                {nextBlock && <TaskQuickActions block={nextBlock} onAction={() => refetchSchedule()} />}
               </div>
-              <h3 className="font-bold text-text-primary text-lg">
-                {(nextTask as Task)?.title || 'Task'}
-              </h3>
-              <div className="flex items-center gap-3 mt-2 text-sm text-text-secondary">
-                <span>🕐 {format(parseISO(nextBlock.startTime), 'h:mm a')}</span>
-                <span>⏱ {nextBlock.scheduledDurationMinutes}min</span>
-                {(nextTask as Task)?.category && (
-                  <span className="capitalize">📂 {(nextTask as Task).category}</span>
-                )}
-              </div>
-              {nextBlock && <TaskQuickActions block={nextBlock} onAction={() => refetchSchedule()} />}
-            </motion.div>
+            </MotionCard>
           )}
 
-          {/* Today's Timeline (mini) */}
+          {/* ── Today's Timeline ────────────────────────────────── */}
           {schedule.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 }}
-              className="mb-6"
-            >
-              <h2 className="section-title">Today's Schedule</h2>
-              <div className="space-y-2">
-                {schedule.slice(0, 6).map((block) => (
-                  <div key={block._id} className={`flex items-center gap-3 p-3 rounded-xl border ${blockColors[block.type]}`}>
-                    <span className="text-xs font-mono w-14 shrink-0">
-                      {format(parseISO(block.startTime), 'HH:mm')}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">
-                        {block.type === 'TASK'
-                          ? (block.taskId as Task)?.title || 'Task'
-                          : block.type === 'BREAK' ? '☕ Break'
-                          : block.type === 'BUFFER' ? '🔄 Buffer'
-                          : block.reason || block.type}
-                      </div>
-                      <div className="text-xs opacity-70">{block.scheduledDurationMinutes}min</div>
-                    </div>
-                    {block.status === 'completed' && <span className="text-status-success text-sm">✓</span>}
-                  </div>
-                ))}
+            <MotionCard delay={0.2} className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="section-title mb-0">Today's Schedule</h2>
                 {schedule.length > 6 && (
-                  <p className="text-center text-text-muted text-xs">+{schedule.length - 6} more blocks</p>
+                  <a href="/schedule" className="text-xs text-brand-primary font-medium hover:underline">
+                    View all →
+                  </a>
                 )}
               </div>
-            </motion.div>
+              <div className="space-y-1.5">
+                {schedule.slice(0, 6).map((block) => {
+                  const style = BLOCK_STYLES[block.type] || BLOCK_STYLES.TASK
+                  const start = parseISO(block.startTime)
+                  const isNow = new Date() >= start && new Date() <= parseISO(block.endTime)
+                  return (
+                    <div
+                      key={block._id}
+                      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl border transition-all ${style.bg}
+                        ${isNow ? 'ring-1 ring-brand-primary/30' : ''}`}
+                    >
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${style.dot}`} />
+                      <span className="text-xs font-mono font-semibold text-text-muted w-12 shrink-0">
+                        {format(start, 'HH:mm')}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium truncate block">
+                          {block.type === 'TASK'
+                            ? (block.taskId as Task)?.title || 'Task'
+                            : block.type === 'BREAK' ? 'Break'
+                            : block.type === 'BUFFER' ? 'Buffer'
+                            : block.reason || block.type}
+                        </span>
+                      </div>
+                      <span className="text-xs text-text-muted shrink-0">{block.scheduledDurationMinutes}m</span>
+                      {block.status === 'completed' && <span className="text-status-success text-sm shrink-0">✓</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            </MotionCard>
           )}
 
-          {/* Empty state */}
+          {/* ── Empty state ─────────────────────────────────────── */}
           {schedule.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="glass-card p-8 text-center mb-6"
-            >
-              <div className="text-5xl mb-3">📅</div>
-              <h3 className="font-bold text-text-primary mb-1">No schedule yet</h3>
-              <p className="text-text-muted text-sm mb-4">Add tasks and generate your personalized schedule</p>
-              <a href="/tasks" className="btn-primary inline-flex">+ Add Tasks</a>
-            </motion.div>
+            <MotionCard delay={0.2} className="mb-6">
+              <div className="glass-card p-10 text-center">
+                <div className="text-5xl mb-4">📅</div>
+                <h3 className="font-semibold text-text-primary text-lg mb-2">Nothing scheduled yet</h3>
+                <p className="text-text-muted text-sm mb-6 max-w-xs mx-auto">
+                  Add tasks and hit "Generate AI Schedule" to build your optimal day.
+                </p>
+                <a href="/tasks" className="btn-primary">
+                  + Add Tasks
+                </a>
+              </div>
+            </MotionCard>
           )}
 
-          {/* AI Insights */}
+          {/* ── AI Insights ─────────────────────────────────────── */}
           {insights.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35 }}
-            >
+            <MotionCard delay={0.25}>
               <h2 className="section-title">AI Insights</h2>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {insights.map((insight, i) => (
                   <InsightCard key={i} insight={insight} index={i} />
                 ))}
               </div>
-            </motion.div>
+            </MotionCard>
           )}
         </div>
 

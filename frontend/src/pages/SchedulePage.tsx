@@ -103,7 +103,7 @@ const SchedulePage = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        <div className="max-w-3xl mx-auto px-4 pt-10 pb-24 space-y-6">
+        <div className="page-container space-y-6">
           {/* Header Banner */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card-elevated p-6 border border-brand-primary/20 shadow-xl rounded-2xl">
             <div>

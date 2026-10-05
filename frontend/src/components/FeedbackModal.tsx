@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { IonModal } from '@ionic/react'
 import { useMutation } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import api from '../lib/api'
 
 interface Props {
@@ -11,15 +11,23 @@ interface Props {
 
 type WorkloadRating = 'too_light' | 'balanced' | 'heavy' | 'too_heavy'
 
-const WORKLOAD_OPTIONS: { value: WorkloadRating; label: string; emoji: string; color: string }[] = [
-  { value: 'too_light', label: 'Too Light', emoji: '😴', color: 'text-blue-400' },
-  { value: 'balanced', label: 'Balanced', emoji: '😊', color: 'text-status-success' },
-  { value: 'heavy', label: 'Heavy', emoji: '😓', color: 'text-status-warning' },
-  { value: 'too_heavy', label: 'Too Heavy', emoji: '🥵', color: 'text-status-error' },
+const WORKLOAD_OPTIONS: { value: WorkloadRating; label: string; emoji: string }[] = [
+  { value: 'too_light', label: 'Too Light', emoji: '😴' },
+  { value: 'balanced',  label: 'Balanced',  emoji: '😊' },
+  { value: 'heavy',     label: 'Heavy',     emoji: '😓' },
+  { value: 'too_heavy', label: 'Too Heavy', emoji: '🥵' },
+]
+
+const VIBE_OPTIONS = [
+  { score: 1, emoji: '😊', label: 'Great' },
+  { score: 2, emoji: '🙂', label: 'Good' },
+  { score: 3, emoji: '😐', label: 'Okay' },
+  { score: 4, emoji: '😓', label: 'Tired' },
+  { score: 5, emoji: '😰', label: 'Stressed' },
 ]
 
 const FeedbackModal = ({ isOpen, onClose }: Props) => {
-  const [vibeScore, setVibeScore] = useState<number>(3)
+  const [vibeScore, setVibeScore] = useState<number>(2)
   const [workloadRating, setWorkloadRating] = useState<WorkloadRating>('balanced')
   const [submitted, setSubmitted] = useState(false)
 
@@ -33,81 +41,104 @@ const FeedbackModal = ({ isOpen, onClose }: Props) => {
     onSuccess: () => setSubmitted(true),
   })
 
+  const handleClose = () => {
+    setSubmitted(false)
+    onClose()
+  }
+
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={onClose}>
+    <IonModal isOpen={isOpen} onDidDismiss={handleClose}>
       <div className="bg-bg-secondary min-h-screen px-4 pt-8 pb-10">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-text-primary">How are you doing? 😊</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-text-primary p-2">✕</button>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-7">
+          <h2 className="text-xl font-semibold text-text-primary tracking-tight">Vibe Check</h2>
+          <button
+            onClick={handleClose}
+            className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-text-muted hover:text-text-primary transition-all"
+          >
+            ✕
+          </button>
         </div>
 
-        {submitted ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-12"
-          >
-            <div className="text-5xl mb-4">🎉</div>
-            <h3 className="text-xl font-bold text-text-primary mb-2">Thanks for the feedback!</h3>
-            <p className="text-text-muted text-sm mb-6">Equilibrium will use this to improve your schedule.</p>
-            <button onClick={onClose} className="btn-primary">Done</button>
-          </motion.div>
-        ) : (
-          <div className="space-y-8">
-            {/* Vibe Check */}
-            <div>
-              <h3 className="font-semibold text-text-primary mb-2">How overwhelmed do you feel this week?</h3>
-              <p className="text-xs text-text-muted mb-4">1 = Not at all, 5 = Extremely</p>
-              <div className="flex justify-between gap-2">
-                {[1, 2, 3, 4, 5].map((score) => (
-                  <button
-                    key={score}
-                    onClick={() => setVibeScore(score)}
-                    className={`flex-1 py-3 rounded-xl text-lg font-bold transition-all
-                      ${vibeScore === score
-                        ? 'bg-brand-primary text-white shadow-glow'
-                        : 'bg-white/5 text-text-secondary hover:bg-white/10'}`}
-                  >
-                    {['😊', '🙂', '😐', '😓', '😰'][score - 1]}
-                    <div className="text-xs font-normal mt-1">{score}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Workload */}
-            <div>
-              <h3 className="font-semibold text-text-primary mb-4">How does today's workload feel?</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {WORKLOAD_OPTIONS.map(({ value, label, emoji, color }) => (
-                  <button
-                    key={value}
-                    onClick={() => setWorkloadRating(value)}
-                    className={`p-4 rounded-xl transition-all text-left border
-                      ${workloadRating === value
-                        ? 'border-brand-primary bg-brand-primary/10'
-                        : 'border-white/5 bg-white/3 hover:bg-white/8'}`}
-                  >
-                    <div className="text-2xl mb-1">{emoji}</div>
-                    <div className={`font-medium text-sm ${workloadRating === value ? 'text-brand-primary' : color}`}>
-                      {label}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button
-              id="submit-feedback-btn"
-              onClick={() => mutation.mutate()}
-              disabled={mutation.isPending}
-              className="btn-primary w-full"
+        <AnimatePresence mode="wait">
+          {submitted ? (
+            <motion.div
+              key="success"
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center text-center py-14"
             >
-              {mutation.isPending ? <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" /> : null}
-              {mutation.isPending ? 'Submitting...' : 'Submit Feedback'}
-            </button>
-          </div>
-        )}
+              <div className="text-6xl mb-5">🎉</div>
+              <h3 className="text-xl font-semibold text-text-primary mb-2">Thanks!</h3>
+              <p className="text-text-muted text-sm mb-8 max-w-xs">
+                Equilibrium will use this feedback to improve your schedule.
+              </p>
+              <button onClick={handleClose} className="btn-primary px-10">Done</button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-8"
+            >
+              {/* Vibe score */}
+              <div>
+                <h3 className="font-semibold text-text-primary mb-1">How are you feeling?</h3>
+                <p className="text-xs text-text-muted mb-4">1 = Great, 5 = Very stressed</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {VIBE_OPTIONS.map(({ score, emoji, label }) => (
+                    <button
+                      key={score}
+                      onClick={() => setVibeScore(score)}
+                      className={`flex flex-col items-center py-3 rounded-2xl transition-all border
+                        ${vibeScore === score
+                          ? 'bg-brand-primary/15 border-brand-primary/40 text-brand-primary'
+                          : 'bg-white/4 border-white/8 text-text-secondary hover:bg-white/8'}`}
+                    >
+                      <span className="text-2xl">{emoji}</span>
+                      <span className="text-[10px] font-medium mt-1">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Workload */}
+              <div>
+                <h3 className="font-semibold text-text-primary mb-4">How does today's workload feel?</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {WORKLOAD_OPTIONS.map(({ value, label, emoji }) => (
+                    <button
+                      key={value}
+                      onClick={() => setWorkloadRating(value)}
+                      className={`p-4 rounded-2xl transition-all text-left border
+                        ${workloadRating === value
+                          ? 'border-brand-primary/40 bg-brand-primary/10'
+                          : 'border-white/8 bg-white/4 hover:bg-white/7'}`}
+                    >
+                      <div className="text-2xl mb-1.5">{emoji}</div>
+                      <div className={`font-medium text-sm ${workloadRating === value ? 'text-brand-primary' : 'text-text-secondary'}`}>
+                        {label}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                id="submit-feedback-btn"
+                onClick={() => mutation.mutate()}
+                disabled={mutation.isPending}
+                className="btn-primary w-full"
+              >
+                {mutation.isPending && (
+                  <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+                )}
+                {mutation.isPending ? 'Submitting...' : 'Submit Feedback'}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </IonModal>
   )

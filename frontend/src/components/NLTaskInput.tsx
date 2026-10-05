@@ -5,6 +5,7 @@ import api from '../lib/api';
 export const NLTaskInput = () => {
   const [input, setInput] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const qc = useQueryClient();
 
   const parseMutation = useMutation({
@@ -12,6 +13,8 @@ export const NLTaskInput = () => {
     onSuccess: () => {
       setInput('');
       setError('');
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
       qc.invalidateQueries({ queryKey: ['tasks'] });
       qc.invalidateQueries({ queryKey: ['schedule'] });
     },
@@ -28,29 +31,37 @@ export const NLTaskInput = () => {
   };
 
   return (
-    <div className="glass-card-elevated p-3.5 mb-6 border border-brand-primary/30 rounded-2xl shadow-lg bg-bg-secondary/90">
-      <form onSubmit={handleSubmit} className="flex items-center gap-2">
-        <div className="text-xl pl-1 shrink-0">✨</div>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder='Try: "Add: Physics exam prep, 3 hours, due Friday"'
-          className="input-field py-2 text-xs md:text-sm border-none bg-transparent focus:ring-0"
-        />
-        <button
-          type="submit"
-          disabled={!input.trim() || parseMutation.isPending}
-          className="btn-primary text-xs py-2 px-3 shrink-0 rounded-xl font-semibold shadow-glow"
-        >
-          {parseMutation.isPending ? (
-            <span className="animate-spin w-3 h-3 border-2 border-white/30 border-t-white rounded-full" />
-          ) : (
-            '✨ Auto-Create'
-          )}
-        </button>
-      </form>
-      {error && <p className="text-status-error text-xs mt-1.5 pl-2">{error}</p>}
+    <div className="mb-5">
+      <div className="glass-card border border-brand-primary/20 rounded-2xl overflow-hidden">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2 p-2 pl-3.5">
+          <span className="text-base shrink-0 select-none">✨</span>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => { setInput(e.target.value); setError(''); }}
+            placeholder='e.g. "Physics exam prep, 3 hrs, due Friday"'
+            className="flex-1 bg-transparent border-none outline-none text-sm text-text-primary placeholder:text-text-muted py-2 min-w-0"
+            disabled={parseMutation.isPending}
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || parseMutation.isPending}
+            className="btn-primary !text-xs !py-2 !px-3.5 !min-h-0 shrink-0"
+          >
+            {parseMutation.isPending ? (
+              <span className="animate-spin w-3 h-3 border-2 border-white/30 border-t-white rounded-full" />
+            ) : success ? '✓ Added!' : 'Add'}
+          </button>
+        </form>
+        {error && (
+          <div className="px-3.5 pb-3 text-xs text-status-error flex items-center gap-1">
+            <span>⚠️</span> {error}
+          </div>
+        )}
+      </div>
+      <p className="text-[11px] text-text-muted mt-1.5 px-1">
+        Type naturally — AI will extract title, duration & deadline.
+      </p>
     </div>
   );
 };

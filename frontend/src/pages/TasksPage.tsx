@@ -12,12 +12,12 @@ import { getGoogleCalendarUrl } from '../utils/googleCalendar'
 import { NLTaskInput } from '../components/NLTaskInput'
 import { FocusSessionModal } from '../components/FocusSessionModal'
 
-const PRIORITY_LABELS: Record<number, { label: string; class: string }> = {
-  1: { label: 'Low', class: 'priority-badge-1' },
-  2: { label: 'Normal', class: 'priority-badge-2' },
-  3: { label: 'Medium', class: 'priority-badge-3' },
-  4: { label: 'High', class: 'priority-badge-4' },
-  5: { label: 'Critical', class: 'priority-badge-5' },
+const PRIORITY_LABELS: Record<number, { label: string; cls: string }> = {
+  1: { label: 'Low',      cls: 'priority-badge-1' },
+  2: { label: 'Normal',   cls: 'priority-badge-2' },
+  3: { label: 'Medium',   cls: 'priority-badge-3' },
+  4: { label: 'High',     cls: 'priority-badge-4' },
+  5: { label: 'Critical', cls: 'priority-badge-5' },
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -27,10 +27,10 @@ const CATEGORY_ICONS: Record<string, string> = {
 }
 
 const STATUS_FILTERS: { value: string; label: string }[] = [
-  { value: '', label: 'All' },
-  { value: 'pending', label: 'Pending' },
+  { value: '',           label: 'All' },
+  { value: 'pending',    label: 'Pending' },
   { value: 'in_progress', label: 'In Progress' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'completed',  label: 'Completed' },
 ]
 
 const TasksPage = () => {
@@ -64,11 +64,11 @@ const TasksPage = () => {
   })
 
   const statusColors: Record<TaskStatus, string> = {
-    pending: 'text-text-muted',
+    pending:     'text-text-primary',
     in_progress: 'text-brand-accent',
-    completed: 'text-status-success',
-    skipped: 'text-text-muted line-through',
-    overdue: 'text-status-error',
+    completed:   'text-status-success',
+    skipped:     'text-text-muted line-through',
+    overdue:     'text-status-error',
   }
 
   return (
@@ -78,68 +78,80 @@ const TasksPage = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        <div className="max-w-2xl mx-auto px-4 pt-12 pb-24">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+        <div className="page-container">
+          {/* ── Header ─────────────────────────────────────────── */}
+          <div className="flex items-start justify-between mb-6 gap-3">
             <div>
-              <h1 className="text-2xl font-bold gradient-text">Tasks</h1>
-              <p className="text-text-muted text-sm">{tasks.length} task{tasks.length !== 1 ? 's' : ''}</p>
+              <h1 className="page-title">Tasks</h1>
+              <p className="text-sm text-text-muted mt-1">
+                {tasks.length} task{tasks.length !== 1 ? 's' : ''}
+              </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 shrink-0">
               <button
                 onClick={() => setShowFeedback(true)}
-                className="btn-secondary text-sm py-2 px-3"
+                className="btn-secondary !py-2 !px-3 text-sm"
                 id="vibe-check-btn"
+                aria-label="Check vibe"
               >
                 😊 Vibe
               </button>
               <button
                 id="add-task-btn"
                 onClick={() => { setEditTask(null); setShowForm(true) }}
-                className="btn-primary text-sm py-2 px-4"
+                className="btn-primary !py-2 !px-4 text-sm"
               >
-                + Add Task
+                <span className="text-base leading-none">+</span>
+                <span>Task</span>
               </button>
             </div>
           </div>
 
-          {/* Natural Language Task Input */}
+          {/* ── Natural Language Task Input ─────────────────────── */}
           <NLTaskInput />
 
-          {/* Status Filter Tabs */}
-          <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+          {/* ── Status Filter Tabs ──────────────────────────────── */}
+          <div className="flex gap-2 mb-5 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
             {STATUS_FILTERS.map(({ value, label }) => (
               <button
                 key={value}
                 onClick={() => setStatusFilter(value)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium shrink-0 transition-all
+                className={`px-4 py-2 rounded-xl text-sm font-medium shrink-0 transition-all border
                   ${statusFilter === value
-                    ? 'bg-brand-primary text-white'
-                    : 'bg-white/5 text-text-secondary hover:bg-white/10'}`}
+                    ? 'bg-brand-primary text-white border-brand-primary shadow-glow'
+                    : 'bg-transparent text-text-secondary border-white/8 hover:border-white/14 hover:text-text-primary'}`}
               >
                 {label}
               </button>
             ))}
           </div>
 
-          {/* Task List */}
+          {/* ── Task List ───────────────────────────────────────── */}
           {isLoading ? (
             <div className="space-y-3">
-              {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-24 rounded-xl" />)}
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="skeleton h-24 rounded-2xl" />
+              ))}
             </div>
           ) : tasks.length === 0 ? (
-            <div className="glass-card p-8 text-center">
-              <div className="text-4xl mb-3">✨</div>
-              <h3 className="font-bold text-text-primary mb-1">
-                {statusFilter ? `No ${statusFilter} tasks` : 'No tasks yet'}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="glass-card p-10 text-center"
+            >
+              <div className="text-5xl mb-4">✨</div>
+              <h3 className="font-semibold text-text-primary text-lg mb-2">
+                {statusFilter ? `No ${statusFilter.replace('_', ' ')} tasks` : 'No tasks yet'}
               </h3>
-              <p className="text-text-muted text-sm mb-4">
+              <p className="text-text-muted text-sm mb-6 max-w-xs mx-auto">
                 {statusFilter ? 'Try a different filter' : 'Add your first task to get started'}
               </p>
               {!statusFilter && (
-                <button onClick={() => setShowForm(true)} className="btn-primary">+ Add Task</button>
+                <button onClick={() => setShowForm(true)} className="btn-primary">
+                  + Add Task
+                </button>
               )}
-            </div>
+            </motion.div>
           ) : (
             <AnimatePresence>
               <div className="space-y-3">
@@ -152,77 +164,80 @@ const TasksPage = () => {
                   return (
                     <motion.div
                       key={task._id}
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ delay: i * 0.04 }}
-                      className={`glass-card-elevated p-4 transition-all hover:border-brand-primary/20
-                        ${task.status === 'completed' ? 'opacity-60' : ''}
-                        ${isOverdue ? 'border-status-error/30' : ''}`}
+                      exit={{ opacity: 0, scale: 0.97 }}
+                      transition={{ delay: i * 0.035, duration: 0.2 }}
+                      className={`glass-card-elevated transition-all
+                        ${task.status === 'completed' ? 'opacity-55' : ''}
+                        ${isOverdue ? 'border-status-error/25' : ''}`}
                     >
-                      <div className="flex items-start gap-3">
-                        {/* Category icon */}
-                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0 text-xl">
-                          {CATEGORY_ICONS[task.category] || '📌'}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className={`font-semibold text-sm ${statusColors[task.status]}`}>
-                              {task.title}
-                            </h3>
-                            <span className={pri.class}>{pri.label}</span>
+                      <div className="p-4 pb-0">
+                        <div className="flex items-start gap-3">
+                          {/* Category icon */}
+                          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0 text-xl mt-0.5">
+                            {CATEGORY_ICONS[task.category] || '📌'}
                           </div>
 
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <span className="text-xs text-text-muted">
-                              ⏱ {task.estimatedDurationMinutes}min
-                              {hasMLPrediction && task.predictedDurationMinutes !== task.estimatedDurationMinutes && (
-                                <span className="text-brand-accent ml-1">
-                                  (AI: {task.predictedDurationMinutes}min)
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2 mb-1.5">
+                              <h3 className={`font-semibold text-sm leading-snug ${statusColors[task.status]}`}>
+                                {task.title}
+                              </h3>
+                              <span className={`${pri.cls} shrink-0 mt-0.5`}>{pri.label}</span>
+                            </div>
+
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <span className="text-xs text-text-muted flex items-center gap-1">
+                                ⏱ {task.estimatedDurationMinutes}min
+                                {hasMLPrediction && task.predictedDurationMinutes !== task.estimatedDurationMinutes && (
+                                  <span className="text-brand-accent">
+                                    → {task.predictedDurationMinutes}m AI
+                                  </span>
+                                )}
+                              </span>
+                              <span className={`text-xs ${isOverdue ? 'text-status-error font-medium' : 'text-text-muted'}`}>
+                                📅 {format(deadline, 'MMM d')}
+                                {isOverdue && ' · Overdue'}
+                              </span>
+                              <span className="text-xs text-text-muted capitalize">
+                                {task.category.replace('_', ' ')}
+                              </span>
+                              {task.isRecurring && (
+                                <span className="text-xs bg-brand-primary/10 text-brand-primary border border-brand-primary/20 px-2 py-0.5 rounded-full font-medium capitalize">
+                                  🔄 {task.recurrencePattern}
                                 </span>
                               )}
-                            </span>
-                            <span className={`text-xs ${isOverdue ? 'text-status-error' : 'text-text-muted'}`}>
-                              📅 {format(deadline, 'MMM d')}
-                              {isOverdue && ' ⚠️ Overdue'}
-                            </span>
-                            <span className="text-xs text-text-muted capitalize">📂 {task.category}</span>
-                            {task.isRecurring && (
-                              <span className="text-xs bg-brand-primary/10 text-brand-primary border border-brand-primary/20 px-2 py-0.5 rounded-full font-medium capitalize">
-                                🔄 {task.recurrencePattern}
-                              </span>
-                            )}
-                          </div>
-
-                          {task.extensionCount > 0 && (
-                            <div className="text-xs text-status-warning mt-1">
-                              Extended {task.extensionCount}×
+                              {task.extensionCount > 0 && (
+                                <span className="text-xs text-status-warning">
+                                  Extended {task.extensionCount}×
+                                </span>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
 
                       {/* Actions */}
                       {task.status !== 'completed' && task.status !== 'skipped' && (
-                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
+                        <div className="flex items-center gap-1.5 px-4 py-3 mt-1 border-t border-white/5 overflow-x-auto scrollbar-hide">
                           <button
                             id={`complete-task-${task._id}`}
                             onClick={() => setCompleteTask(task)}
-                            className="btn-primary text-xs py-1.5 px-3"
+                            className="btn-primary !text-xs !py-1.5 !px-3 !min-h-0 shrink-0"
                           >
                             ✓ Complete
                           </button>
                           <button
                             onClick={() => setFocusTask(task)}
-                            className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1 text-brand-primary border-brand-primary/30 font-semibold"
+                            className="btn-secondary !text-xs !py-1.5 !px-3 !min-h-0 text-brand-primary border-brand-primary/25 font-semibold shrink-0"
                             title="Start Focus Mode Timer"
                           >
                             🔥 Focus
                           </button>
                           <button
                             onClick={() => { setEditTask(task); setShowForm(true) }}
-                            className="btn-secondary text-xs py-1.5 px-3"
+                            className="btn-secondary !text-xs !py-1.5 !px-3 !min-h-0 shrink-0"
                           >
                             Edit
                           </button>
@@ -235,20 +250,22 @@ const TasksPage = () => {
                             })}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1"
+                            className="btn-secondary !text-xs !py-1.5 !px-3 !min-h-0 shrink-0"
                             title="Add to Google Calendar"
                           >
-                            📅 GCal
+                            📅
                           </a>
+                          <div className="flex-1" />
                           <button
                             onClick={() => skipMutation.mutate(task._id)}
-                            className="text-xs text-text-muted hover:text-status-warning transition-colors px-2 py-1.5"
+                            className="text-xs text-text-muted hover:text-status-warning transition-colors px-2 py-1.5 shrink-0"
                           >
                             Skip
                           </button>
                           <button
                             onClick={() => deleteMutation.mutate(task._id)}
-                            className="text-xs text-text-muted hover:text-status-error transition-colors px-2 py-1.5 ml-auto"
+                            className="text-xs text-text-muted hover:text-status-error transition-colors px-2 py-1.5 shrink-0"
+                            aria-label="Delete task"
                           >
                             🗑
                           </button>
@@ -262,7 +279,7 @@ const TasksPage = () => {
           )}
         </div>
 
-        {/* Modals */}
+        {/* ── Modals ──────────────────────────────────────────────── */}
         <TaskFormModal
           isOpen={showForm}
           task={editTask}

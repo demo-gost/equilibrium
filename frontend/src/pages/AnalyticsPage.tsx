@@ -18,10 +18,33 @@ const MetricCard = ({ label, value, unit = '', color = 'text-text-primary', sub 
 }) => (
   <div className="metric-card">
     <div className="metric-label">{label}</div>
-    <div className={`metric-value ${color}`}>{value}<span className="text-sm font-normal text-text-muted ml-1">{unit}</span></div>
-    {sub && <div className="text-xs text-text-muted">{sub}</div>}
+    <div className={`metric-value ${color}`}>
+      {value}
+      {unit && <span className="text-sm font-normal text-text-muted ml-1">{unit}</span>}
+    </div>
+    {sub && <div className="text-xs text-text-muted mt-0.5">{sub}</div>}
   </div>
 )
+
+const MotionCard = ({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay, duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+    className={className}
+  >
+    {children}
+  </motion.div>
+)
+
+const DARK_TOOLTIP_STYLE = {
+  background: '#1c1c1e',
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: 12,
+  color: '#f5f5f7',
+  fontSize: 12,
+  boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+}
 
 const AnalyticsPage = () => {
   const { data: summary, refetch: refetchSummary } = useQuery({ queryKey: ['analytics-summary'], queryFn: fetchSummary })
@@ -30,7 +53,7 @@ const AnalyticsPage = () => {
 
   const completionPieData = summary ? [
     { name: 'Completed', value: summary.completedTasks },
-    { name: 'Remaining', value: summary.totalTasks - summary.completedTasks },
+    { name: 'Remaining', value: Math.max(0, summary.totalTasks - summary.completedTasks) },
   ] : []
 
   return (
@@ -40,60 +63,60 @@ const AnalyticsPage = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        <div className="max-w-2xl mx-auto px-4 pt-12 pb-24">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold gradient-text">Analytics</h1>
-            <p className="text-text-muted text-sm">Your productivity insights</p>
-          </div>
+        <div className="page-container">
+          {/* ── Header ─────────────────────────────────────────── */}
+          <MotionCard className="mb-8">
+            <h1 className="page-title">Analytics</h1>
+            <p className="text-sm text-text-muted mt-1">Your productivity insights</p>
+          </MotionCard>
 
-          {/* North Star Metric */}
+          {/* ── North Star Metric ───────────────────────────────── */}
           {summary && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="glass-card-elevated p-5 mb-6 border border-brand-primary/20"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-brand-primary/10 flex items-center justify-center text-xl">⚖️</div>
-                <div>
-                  <div className="font-bold text-text-primary">Sustainable On-Time Rate</div>
-                  <div className="text-xs text-text-muted">North Star Metric</div>
+            <MotionCard delay={0.05} className="mb-6">
+              <div className="glass-card-elevated p-5 border border-brand-primary/20">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-brand-primary/12 flex items-center justify-center text-xl shrink-0">
+                    ⚖️
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-text-primary text-sm">Sustainable On-Time Rate</div>
+                    <div className="text-xs text-text-muted mt-0.5">Your north star metric</div>
+                  </div>
+                  <div className="text-3xl font-black gradient-text shrink-0">
+                    {summary.sustainableOnTimeRate}%
+                  </div>
                 </div>
-                <div className="ml-auto text-3xl font-black gradient-text">{summary.sustainableOnTimeRate}%</div>
+                <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(summary.sustainableOnTimeRate, 100)}%` }}
+                    transition={{ delay: 0.3, duration: 0.8, ease: 'easeOut' }}
+                    className="bg-gradient-to-r from-brand-primary to-brand-secondary h-full rounded-full"
+                  />
+                </div>
               </div>
-              <div className="w-full bg-white/5 rounded-full h-2">
-                <div
-                  className="bg-gradient-to-r from-brand-primary to-brand-secondary h-2 rounded-full transition-all"
-                  style={{ width: `${Math.min(summary.sustainableOnTimeRate, 100)}%` }}
-                />
-              </div>
-            </motion.div>
+            </MotionCard>
           )}
 
-          {/* Key Metrics Grid */}
+          {/* ── Key Metrics Grid ────────────────────────────────── */}
           {summary && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="grid grid-cols-2 gap-3 mb-6"
-            >
+            <MotionCard delay={0.1} className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
               <MetricCard
-                label="Completion Rate"
+                label="Completion"
                 value={summary.completionRate}
                 unit="%"
                 color="text-status-success"
-                sub={`${summary.completedTasks} of ${summary.totalTasks} tasks`}
+                sub={`${summary.completedTasks} of ${summary.totalTasks}`}
               />
               <MetricCard
-                label="Avg Estimation Error"
+                label="Estimation Error"
                 value={`${summary.avgEstimationErrorPercent > 0 ? '+' : ''}${summary.avgEstimationErrorPercent}`}
                 unit="%"
                 color={summary.avgEstimationErrorPercent > 20 ? 'text-status-warning' : 'text-text-primary'}
-                sub={summary.avgEstimationErrorPercent > 0 ? 'Over-running estimates' : 'Good estimation!'}
+                sub={summary.avgEstimationErrorPercent > 0 ? 'Over-running' : 'Accurate!'}
               />
               <MetricCard
-                label="Schedule Adherence"
+                label="Adherence"
                 value={summary.scheduleAdherenceRate}
                 unit="%"
                 color="text-brand-accent"
@@ -103,121 +126,134 @@ const AnalyticsPage = () => {
                 value={summary.extensionRate}
                 unit="%"
                 color={summary.extensionRate > 40 ? 'text-status-warning' : 'text-text-primary'}
-                sub="Tasks needing more time"
+                sub="Needed more time"
               />
               <MetricCard
-                label="Deadline Miss Rate"
+                label="Deadline Miss"
                 value={summary.deadlineMissRate}
                 unit="%"
                 color={summary.deadlineMissRate > 15 ? 'text-status-error' : 'text-status-success'}
               />
               {summary.latestVibeScore !== undefined && (
                 <MetricCard
-                  label="Workload Feeling"
+                  label="Vibe Check"
                   value={['😊', '🙂', '😐', '😓', '😰'][summary.latestVibeScore - 1] || '—'}
                   unit=""
                   color="text-text-primary"
-                  sub={`Score: ${summary.latestVibeScore}/5`}
+                  sub={`Score ${summary.latestVibeScore}/5`}
                 />
               )}
-            </motion.div>
+            </MotionCard>
           )}
 
-          {/* Task Completion Pie */}
+          {/* ── Task Completion Donut ───────────────────────────── */}
           {summary && summary.totalTasks > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="glass-card p-4 mb-6"
-            >
-              <h2 className="section-title text-base mb-4">Task Completion</h2>
-              <div className="flex items-center gap-4">
-                <ResponsiveContainer width={120} height={120}>
-                  <PieChart>
-                    <Pie data={completionPieData} cx="50%" cy="50%" innerRadius={35} outerRadius={55} dataKey="value" strokeWidth={0}>
-                      <Cell fill="#6366f1" />
-                      <Cell fill="#1a2236" />
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
+            <MotionCard delay={0.15} className="glass-card p-5 mb-6">
+              <h2 className="section-title">Task Completion</h2>
+              <div className="flex items-center gap-6">
+                <div className="shrink-0">
+                  <ResponsiveContainer width={100} height={100}>
+                    <PieChart>
+                      <Pie
+                        data={completionPieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={30}
+                        outerRadius={48}
+                        dataKey="value"
+                        strokeWidth={0}
+                        startAngle={90}
+                        endAngle={-270}
+                      >
+                        <Cell fill="#6366f1" />
+                        <Cell fill="rgba(255,255,255,0.06)" />
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
                 <div>
                   <div className="text-3xl font-black text-brand-primary">{summary.completionRate}%</div>
-                  <div className="text-text-muted text-sm">{summary.completedTasks} completed</div>
-                  <div className="text-text-muted text-sm">{summary.totalTasks - summary.completedTasks} remaining</div>
+                  <div className="text-text-muted text-sm mt-1">{summary.completedTasks} completed</div>
+                  <div className="text-text-muted text-sm">{Math.max(0, summary.totalTasks - summary.completedTasks)} remaining</div>
                 </div>
               </div>
-            </motion.div>
+            </MotionCard>
           )}
 
-          {/* Weekly Workload Trend */}
+          {/* ── Weekly Study Hours ──────────────────────────────── */}
           {trends.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="glass-card p-4 mb-6"
-            >
-              <h2 className="section-title text-base mb-4">Weekly Study Hours</h2>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={trends} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
-                  <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false}
-                    tickFormatter={(w) => w.slice(5)} />
-                  <YAxis tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} />
+            <MotionCard delay={0.2} className="glass-card p-5 mb-6">
+              <h2 className="section-title">Weekly Study Hours</h2>
+              <ResponsiveContainer width="100%" height={150}>
+                <BarChart data={trends} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
+                  <XAxis
+                    dataKey="week"
+                    tick={{ fontSize: 10, fill: '#636366' }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(w) => w.slice(5)}
+                  />
+                  <YAxis tick={{ fontSize: 10, fill: '#636366' }} tickLine={false} axisLine={false} />
                   <Tooltip
-                    contentStyle={{ background: '#1a2236', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#f1f5f9', fontSize: 12 }}
-                    cursor={{ fill: 'rgba(99,102,241,0.1)' }}
+                    contentStyle={DARK_TOOLTIP_STYLE}
+                    cursor={{ fill: 'rgba(99,102,241,0.08)' }}
                     formatter={(v: any) => [`${typeof v === 'number' ? v.toFixed(1) : v}h`, 'Hours']}
                   />
                   <Bar dataKey="totalHoursStudied" fill="#6366f1" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            </motion.div>
+            </MotionCard>
           )}
 
-          {/* Estimation Error Trend */}
+          {/* ── Estimation Accuracy ─────────────────────────────── */}
           {trends.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 }}
-              className="glass-card p-4 mb-6"
-            >
-              <h2 className="section-title text-base mb-1">Estimation Accuracy</h2>
+            <MotionCard delay={0.25} className="glass-card p-5 mb-6">
+              <h2 className="section-title">Estimation Accuracy</h2>
               <p className="text-xs text-text-muted mb-4">Closer to 0% = better estimates</p>
-              <ResponsiveContainer width="100%" height={140}>
-                <LineChart data={trends} margin={{ top: 5, right: 0, bottom: 0, left: -20 }}>
-                  <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false}
-                    tickFormatter={(w) => w.slice(5)} />
-                  <YAxis tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} unit="%" />
+              <ResponsiveContainer width="100%" height={130}>
+                <LineChart data={trends} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
+                  <XAxis
+                    dataKey="week"
+                    tick={{ fontSize: 10, fill: '#636366' }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(w) => w.slice(5)}
+                  />
+                  <YAxis tick={{ fontSize: 10, fill: '#636366' }} tickLine={false} axisLine={false} unit="%" />
                   <Tooltip
-                    contentStyle={{ background: '#1a2236', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#f1f5f9', fontSize: 12 }}
+                    contentStyle={DARK_TOOLTIP_STYLE}
                     formatter={(v: any) => [`${typeof v === 'number' ? v.toFixed(1) : v}%`, 'Error']}
                   />
-                  <Line type="monotone" dataKey="avgEstimationError" stroke="#06b6d4"
-                    strokeWidth={2} dot={{ fill: '#06b6d4', r: 3 }} activeDot={{ r: 5 }} />
+                  <Line
+                    type="monotone"
+                    dataKey="avgEstimationError"
+                    stroke="#06b6d4"
+                    strokeWidth={2}
+                    dot={{ fill: '#06b6d4', r: 3, strokeWidth: 0 }}
+                    activeDot={{ r: 5, strokeWidth: 0 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
-            </motion.div>
+            </MotionCard>
           )}
 
-          {/* Empty analytics state */}
+          {/* ── Empty state ─────────────────────────────────────── */}
           {(!summary || summary.totalTasks === 0) && (
-            <div className="glass-card p-8 text-center">
-              <div className="text-4xl mb-3">📊</div>
-              <h3 className="font-bold text-text-primary mb-1">No data yet</h3>
+            <div className="glass-card p-10 text-center">
+              <div className="text-5xl mb-4">📊</div>
+              <h3 className="font-semibold text-text-primary text-lg mb-2">No data yet</h3>
               <p className="text-text-muted text-sm">Complete tasks to start seeing your analytics</p>
             </div>
           )}
 
-          {/* AI Insights */}
+          {/* ── AI Insights ─────────────────────────────────────── */}
           {insights.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <MotionCard delay={0.3}>
               <h2 className="section-title">🤖 AI Insights</h2>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {insights.map((insight, i) => <InsightCard key={i} insight={insight} index={i} />)}
               </div>
-            </motion.div>
+            </MotionCard>
           )}
         </div>
       </IonContent>

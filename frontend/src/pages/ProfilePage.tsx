@@ -7,6 +7,11 @@ import { useAuthStore } from '../store/auth.store'
 import { useThemeStore } from '../store/theme.store'
 import { useNotifications } from '../hooks/useNotifications'
 
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => ({
+  value: i,
+  label: `${i.toString().padStart(2, '0')}:00`,
+}))
+
 const ProfilePage = () => {
   const { user, setUser, logout } = useAuthStore()
   const { theme, setTheme } = useThemeStore()
@@ -79,152 +84,208 @@ const ProfilePage = () => {
     router.push('/login', 'root', 'replace')
   }
 
+  const THEMES = [
+    { value: 'light', label: 'Light', icon: '☀️' },
+    { value: 'dark',  label: 'Dark',  icon: '🌙' },
+    { value: 'system', label: 'System', icon: '💻' },
+  ] as const
+
   return (
     <IonPage>
       <IonContent>
-        <div className="max-w-2xl mx-auto px-4 pt-12 pb-24">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold gradient-text">Profile</h1>
-            <p className="text-text-muted text-sm">Manage your study preferences</p>
+        <div className="page-container">
+          {/* ── Header ─────────────────────────────────────────── */}
+          <div className="mb-8">
+            <h1 className="page-title">Profile</h1>
+            <p className="text-sm text-text-muted mt-1">Preferences & account settings</p>
           </div>
 
-          {/* User Info */}
-          <div className="glass-card-elevated p-5 mb-6 flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-2xl font-bold text-white">
+          {/* ── User Info Card ──────────────────────────────────── */}
+          <div className="glass-card-elevated p-5 mb-5 flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-2xl font-bold text-white shrink-0 select-none">
               {user?.name?.charAt(0).toUpperCase()}
             </div>
-            <div>
-              <div className="font-bold text-text-primary text-lg">{user?.name}</div>
-              <div className="text-text-muted text-sm">{user?.email}</div>
-              <div className="text-text-muted text-xs mt-0.5">{user?.timezone}</div>
+            <div className="min-w-0">
+              <div className="font-semibold text-text-primary text-base leading-tight truncate">{user?.name}</div>
+              <div className="text-text-muted text-sm mt-0.5 truncate">{user?.email}</div>
+              {user?.timezone && (
+                <div className="text-text-muted text-xs mt-0.5 truncate">{user?.timezone}</div>
+              )}
             </div>
           </div>
 
-          {/* Theme & Notifications */}
-          <div className="glass-card-elevated p-5 mb-4 space-y-4">
-            <h2 className="font-bold text-text-primary text-base">Appearance & Theme</h2>
+          {/* ── Appearance ──────────────────────────────────────── */}
+          <div className="glass-card-elevated p-5 mb-4">
+            <h2 className="font-semibold text-text-primary text-sm mb-3">Appearance</h2>
             <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => setTheme('light')}
-                className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all
-                  ${theme === 'light' ? 'bg-brand-primary text-white shadow-md' : 'btn-secondary'}`}
-              >
-                ☀️ Light
-              </button>
-              <button
-                onClick={() => setTheme('dark')}
-                className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all
-                  ${theme === 'dark' ? 'bg-brand-primary text-white shadow-md' : 'btn-secondary'}`}
-              >
-                🌙 Dark
-              </button>
-              <button
-                onClick={() => setTheme('system')}
-                className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all
-                  ${theme === 'system' ? 'bg-brand-primary text-white shadow-md' : 'btn-secondary'}`}
-              >
-                💻 System
-              </button>
+              {THEMES.map(({ value, label, icon }) => (
+                <button
+                  key={value}
+                  onClick={() => setTheme(value)}
+                  className={`py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border
+                    ${theme === value
+                      ? 'bg-brand-primary text-white border-brand-primary shadow-glow'
+                      : 'btn-secondary border-white/8 !py-2.5 !text-xs !font-semibold'}`}
+                >
+                  {icon} {label}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="glass-card-elevated p-5 mb-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-bold text-text-primary text-base">Push Notifications</h2>
-                <p className="text-text-muted text-xs">Deadline reminders and study alerts</p>
+          {/* ── Push Notifications ──────────────────────────────── */}
+          <div className="glass-card-elevated p-5 mb-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="font-semibold text-text-primary text-sm">Push Notifications</h2>
+                <p className="text-text-muted text-xs mt-0.5">Deadline reminders and study alerts</p>
               </div>
               <button
                 onClick={requestPermission}
-                className={`py-1.5 px-3 rounded-xl text-xs font-semibold transition-all
-                  ${hasPermission ? 'bg-status-success/20 text-status-success border border-status-success/30' : 'btn-primary'}`}
+                className={`shrink-0 py-2 px-4 rounded-xl text-xs font-semibold transition-all border
+                  ${hasPermission
+                    ? 'bg-status-success/10 text-status-success border-status-success/25'
+                    : 'btn-primary !py-2 !px-4 !text-xs !min-h-0'}`}
               >
                 {hasPermission ? '✓ Enabled' : '🔔 Enable'}
               </button>
             </div>
           </div>
 
-          {/* Settings */}
+          {/* ── Study Settings ──────────────────────────────────── */}
           <div className="glass-card-elevated p-5 mb-4 space-y-5">
-            <h2 className="font-bold text-text-primary">Study Settings</h2>
+            <h2 className="font-semibold text-text-primary text-sm">Study Settings</h2>
 
             <div>
-              <label className="label-text">Daily study limit: <span className="text-brand-primary">{prefs.dailyStudyLimitHours} hours</span></label>
-              <input type="range" min={2} max={14} value={prefs.dailyStudyLimitHours}
+              <label className="label-text">
+                Daily study limit: <span className="text-brand-primary font-semibold">{prefs.dailyStudyLimitHours} hours</span>
+              </label>
+              <input
+                type="range" min={2} max={14} value={prefs.dailyStudyLimitHours}
                 onChange={(e) => update('dailyStudyLimitHours', +e.target.value)}
-                className="w-full mt-2 accent-indigo-500" />
+                className="w-full mt-2 accent-indigo-500"
+              />
+              <div className="flex justify-between text-xs text-text-muted mt-1">
+                <span>2h</span><span>8h</span><span>14h</span>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label-text">Study starts</label>
-                <select className="input-field" value={prefs.preferredStartHour} onChange={(e) => update('preferredStartHour', +e.target.value)}>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>{i.toString().padStart(2,'0')}:00</option>
+                <select
+                  className="input-field"
+                  value={prefs.preferredStartHour}
+                  onChange={(e) => update('preferredStartHour', +e.target.value)}
+                >
+                  {HOUR_OPTIONS.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="label-text">Study ends</label>
-                <select className="input-field" value={prefs.preferredEndHour} onChange={(e) => update('preferredEndHour', +e.target.value)}>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>{i.toString().padStart(2,'0')}:00</option>
+                <select
+                  className="input-field"
+                  value={prefs.preferredEndHour}
+                  onChange={(e) => update('preferredEndHour', +e.target.value)}
+                >
+                  {HOUR_OPTIONS.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
               </div>
             </div>
           </div>
 
-          <div className="glass-card-elevated p-5 mb-4 space-y-5">
-            <h2 className="font-bold text-text-primary">Sleep Schedule</h2>
+          {/* ── Sleep Schedule ──────────────────────────────────── */}
+          <div className="glass-card-elevated p-5 mb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-lg">🌙</span>
+              <h2 className="font-semibold text-text-primary text-sm">Sleep Schedule</h2>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label-text">Bedtime</label>
-                <select className="input-field" value={prefs.bedtimeHour} onChange={(e) => update('bedtimeHour', +e.target.value)}>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>{i.toString().padStart(2,'0')}:00</option>
+                <select
+                  className="input-field"
+                  value={prefs.bedtimeHour}
+                  onChange={(e) => update('bedtimeHour', +e.target.value)}
+                >
+                  {HOUR_OPTIONS.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="label-text">Wake up</label>
-                <select className="input-field" value={prefs.wakeHour} onChange={(e) => update('wakeHour', +e.target.value)}>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>{i.toString().padStart(2,'0')}:00</option>
+                <select
+                  className="input-field"
+                  value={prefs.wakeHour}
+                  onChange={(e) => update('wakeHour', +e.target.value)}
+                >
+                  {HOUR_OPTIONS.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
               </div>
             </div>
+            <p className="text-xs text-text-muted mt-3">
+              Sleep: {HOUR_OPTIONS[prefs.bedtimeHour].label} → {HOUR_OPTIONS[prefs.wakeHour].label}
+              {' · '}
+              {(() => {
+                const s = prefs.bedtimeHour >= prefs.wakeHour
+                  ? 24 - prefs.bedtimeHour + prefs.wakeHour
+                  : prefs.wakeHour - prefs.bedtimeHour
+                return `${s}h sleep`
+              })()}
+            </p>
           </div>
 
+          {/* ── Break Preferences ────────────────────────────────── */}
           <div className="glass-card-elevated p-5 mb-6 space-y-5">
-            <h2 className="font-bold text-text-primary">Break Preferences</h2>
+            <h2 className="font-semibold text-text-primary text-sm">Break Preferences</h2>
             <div>
-              <label className="label-text">Break every: <span className="text-brand-primary">{prefs.breakIntervalMinutes} min</span></label>
-              <input type="range" min={30} max={180} step={15} value={prefs.breakIntervalMinutes}
+              <label className="label-text">
+                Break every: <span className="text-brand-primary font-semibold">{prefs.breakIntervalMinutes} min</span>
+              </label>
+              <input
+                type="range" min={30} max={180} step={15} value={prefs.breakIntervalMinutes}
                 onChange={(e) => update('breakIntervalMinutes', +e.target.value)}
-                className="w-full mt-2 accent-indigo-500" />
+                className="w-full mt-2 accent-indigo-500"
+              />
+              <div className="flex justify-between text-xs text-text-muted mt-1">
+                <span>30m</span><span>90m</span><span>3h</span>
+              </div>
             </div>
             <div>
-              <label className="label-text">Break duration: <span className="text-brand-primary">{prefs.breakDurationMinutes} min</span></label>
-              <input type="range" min={5} max={30} step={5} value={prefs.breakDurationMinutes}
+              <label className="label-text">
+                Break duration: <span className="text-brand-primary font-semibold">{prefs.breakDurationMinutes} min</span>
+              </label>
+              <input
+                type="range" min={5} max={30} step={5} value={prefs.breakDurationMinutes}
                 onChange={(e) => update('breakDurationMinutes', +e.target.value)}
-                className="w-full mt-2 accent-indigo-500" />
+                className="w-full mt-2 accent-indigo-500"
+              />
+              <div className="flex justify-between text-xs text-text-muted mt-1">
+                <span>5m</span><span>15m</span><span>30m</span>
+              </div>
             </div>
           </div>
 
-          {/* Save Button */}
+          {/* ── Actions ─────────────────────────────────────────── */}
           <button
             id="save-profile-btn"
             onClick={handleSave}
             disabled={saving}
             className="btn-primary w-full mb-3"
           >
-            {saving ? <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" /> : null}
-            {saved ? '✓ Saved!' : saving ? 'Saving...' : 'Save Preferences'}
+            {saving && (
+              <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+            )}
+            {saved ? '✓ Preferences saved!' : saving ? 'Saving...' : 'Save Preferences'}
           </button>
 
-          {/* Logout */}
           <button onClick={handleLogout} className="btn-danger w-full">
             Sign Out
           </button>
