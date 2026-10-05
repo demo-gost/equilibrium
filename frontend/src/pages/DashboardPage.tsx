@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { IonContent, IonPage, IonRefresher, IonRefresherContent } from '@ionic/react'
+import { IonContent, IonPage, IonRefresher, IonRefresherContent, useIonViewWillEnter } from '@ionic/react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns'
@@ -64,18 +64,24 @@ const DashboardPage = () => {
     refetchOnMount: 'always',
   })
 
-  const { data: analytics } = useQuery({
+  const { data: analytics, refetch: refetchAnalytics } = useQuery({
     queryKey: ['analytics-summary'],
     queryFn: fetchAnalytics,
     staleTime: 0,
     refetchOnMount: 'always',
   })
 
-  const { data: insights = [] } = useQuery({
+  const { data: insights = [], refetch: refetchInsights } = useQuery({
     queryKey: ['insights'],
     queryFn: fetchInsights,
     staleTime: 0,
     refetchOnMount: 'always',
+  })
+
+  useIonViewWillEnter(() => {
+    refetchSchedule()
+    refetchAnalytics()
+    refetchInsights()
   })
 
   useEffect(() => {

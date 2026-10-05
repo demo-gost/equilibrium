@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { IonContent, IonPage, IonRefresher, IonRefresherContent } from '@ionic/react'
+import { IonContent, IonPage, IonRefresher, IonRefresherContent, useIonViewWillEnter } from '@ionic/react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { format, parseISO, addDays, startOfDay, endOfDay } from 'date-fns'
@@ -28,12 +28,13 @@ const SchedulePage = () => {
   const weekStartStr = startOfDay(days[0]).toISOString()
   const weekEndStr = endOfDay(days[6]).toISOString()
 
-  const { data: weekBlocks = [] } = useQuery({
+  const { data: weekBlocks = [], refetch: refetchWeek } = useQuery({
     queryKey: ['schedule-week', weekStartStr, weekEndStr],
     queryFn: async (): Promise<ScheduleBlock[]> => {
       const res = await api.get(`/schedule?from=${weekStartStr}&to=${weekEndStr}`)
       return res.data.data
     },
+    staleTime: 0,
   })
 
   const from = startOfDay(selectedDate).toISOString()
@@ -45,6 +46,12 @@ const SchedulePage = () => {
       const res = await api.get(`/schedule?from=${from}&to=${to}`)
       return res.data.data
     },
+    staleTime: 0,
+  })
+
+  useIonViewWillEnter(() => {
+    refetch()
+    refetchWeek()
   })
 
   const [toastMessage, setToastMessage] = useState<string | null>(null)
