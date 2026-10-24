@@ -3,8 +3,14 @@ import { persist } from 'zustand/middleware';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
+// ── Version stamp: bump this to force-reset stored theme preference ───────
+// When the design system changes and old 'dark' preference should be wiped,
+// increment this number. Users will be reset to 'light' automatically.
+const THEME_VERSION = 2; // bumped from 1 (old dark default) → 2 (new light default)
+
 interface ThemeState {
   theme: ThemeMode;
+  _version: number;
   setTheme: (theme: ThemeMode) => void;
 }
 
@@ -19,7 +25,6 @@ const applyTheme = (theme: ThemeMode) => {
     root.classList.add('dark');
   } else {
     root.classList.remove('dark');
-    // Explicitly add 'light' so our CSS selectors work
     root.classList.add('light');
   }
 };
@@ -27,20 +32,22 @@ const applyTheme = (theme: ThemeMode) => {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      theme: 'light',   // ← default is now light (soft lavender design)
+      theme: 'light',       // ← default: soft lavender light mode
+      _version: THEME_VERSION,
       setTheme: (theme) => {
         applyTheme(theme);
-        set({ theme });
+        set({ theme, _version: THEME_VERSION });
       },
     }),
     {
       name: 'equilibrium-theme',
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          applyTheme(state.theme);
-        } else {
-          // No stored preference → apply light
+        if (!state || state._version !== THEME_VERSION) {
+          // Stale version (old dark preference) — reset to light and re-write
+          try { localStorage.removeItem('equilibrium-theme'); } catch (_) { /* noop */ }
           applyTheme('light');
+        } else {
+          applyTheme(state.theme);
         }
       },
     }
