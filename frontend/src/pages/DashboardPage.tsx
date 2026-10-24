@@ -141,19 +141,21 @@ const DashboardPage = () => {
         </IonRefresher>
 
         <div className="page-container">
-          {/* ── Header ──────────────────────────────────────────────────────── */}
-          <MotionCard className="flex items-start justify-between mb-8">
+          {/* ── Header ───────────────────────────────────────────────────────── */}
+          <MotionCard className="flex items-start justify-between mb-7">
             <div>
-              <p className="text-xs font-medium text-text-muted uppercase tracking-widest mb-1">
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-widest mb-1.5">
                 {format(currentTime, 'EEEE, MMMM d')}
               </p>
               <h1 className="page-title">
-                {greeting()}, {user?.name?.split(' ')[0]}
+                {greeting()},&nbsp;
+                <span className="gradient-text">{user?.name?.split(' ')[0] ?? 'there'} 👋</span>
               </h1>
+              <p className="text-sm text-text-muted mt-1.5">Here's your day at a glance.</p>
             </div>
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="btn-secondary !p-2.5 !min-h-0 rounded-xl text-lg leading-none"
+              className="btn-secondary !p-2.5 !min-h-0 !rounded-2xl text-lg leading-none"
               title="Toggle theme"
               aria-label="Toggle light and dark theme"
             >
@@ -161,26 +163,26 @@ const DashboardPage = () => {
             </button>
           </MotionCard>
 
-          {/* ── Metrics ─────────────────────────────────────────────────────── */}
+          {/* ── Stat Metric Cards ─────────────────────────────────────────────── */}
           <MotionCard delay={0.05} className="grid grid-cols-3 gap-3 mb-6">
-            <div className="metric-card">
+            <div className="stat-card flex flex-col gap-1">
               <div className="metric-label">Remaining</div>
-              <div className="metric-value text-status-warning">{totalToday - completedToday}</div>
-              <div className="text-xs text-text-muted">of {totalToday}</div>
+              <div className="metric-value text-brand-primary">{totalToday - completedToday}</div>
+              <div className="text-xs text-text-muted font-medium">of {totalToday} tasks</div>
             </div>
-            <div className="metric-card">
+            <div className="stat-card flex flex-col gap-1">
               <div className="metric-label">Done</div>
               <div className="metric-value text-status-success">{completedToday}</div>
-              <div className="text-xs text-text-muted">today</div>
+              <div className="text-xs text-text-muted font-medium">today</div>
             </div>
-            <div className="metric-card">
+            <div className="stat-card flex flex-col gap-1">
               <div className="metric-label">Planned</div>
               <div className="metric-value text-brand-accent">{hoursPlanned.toFixed(1)}h</div>
-              <div className="text-xs text-text-muted">study</div>
+              <div className="text-xs text-text-muted font-medium">focus time</div>
             </div>
           </MotionCard>
 
-          {/* ── Workload Meter ───────────────────────────────────────────────── */}
+          {/* ── Workload Meter ────────────────────────────────────────────────── */}
           <MotionCard delay={0.1} className="mb-6">
             <WorkloadMeter
               plannedHours={hoursPlanned}
@@ -189,93 +191,110 @@ const DashboardPage = () => {
             />
           </MotionCard>
 
-          {/* ── Up Next Task ─────────────────────────────────────────────────── */}
+          {/* ── Up Next Task ──────────────────────────────────────────────────── */}
           {nextBlock && (
             <MotionCard delay={0.15} className="mb-6">
-              <div className="glass-card-elevated p-5 border-l-[3px] border-brand-primary">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="card p-5">
+                <div className="flex items-center gap-2 mb-3">
                   <div className="pulse-dot" />
-                  <span className="text-[11px] font-semibold text-text-muted uppercase tracking-widest">
-                    Up next
+                  <span className="text-[11px] font-bold text-brand-primary uppercase tracking-widest">
+                    Up Next
                   </span>
                 </div>
-                <h3 className="font-semibold text-lg text-text-primary leading-tight mb-2">
-                  {nextTask?.title || 'Task'}
-                </h3>
-                <div className="flex items-center gap-4 text-sm text-text-secondary flex-wrap">
-                  <span>🕐 {format(parseISO(nextBlock.startTime), 'h:mm a')}</span>
-                  <span>⏱ {nextBlock.scheduledDurationMinutes}min</span>
-                  {nextTask?.category && (
-                    <span className="capitalize">📂 {nextTask.category}</span>
-                  )}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-xl text-text-primary leading-tight mb-1.5 truncate">
+                      {nextTask?.title || 'Task'}
+                    </h3>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-text-muted bg-bg-primary px-2.5 py-1 rounded-full">
+                        🕐 {format(parseISO(nextBlock.startTime), 'h:mm a')}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-text-muted bg-bg-primary px-2.5 py-1 rounded-full">
+                        ⏱ {nextBlock.scheduledDurationMinutes}m
+                      </span>
+                      {nextTask?.category && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-text-muted bg-bg-primary px-2.5 py-1 rounded-full capitalize">
+                          📂 {nextTask.category}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <TaskQuickActions block={nextBlock} onAction={() => refetchSchedule()} />
+                <div className="mt-4">
+                  <TaskQuickActions block={nextBlock} onAction={() => refetchSchedule()} />
+                </div>
               </div>
             </MotionCard>
           )}
 
-          {/* ── Today's Timeline ─────────────────────────────────────────────── */}
+          {/* ── Today's Timeline ──────────────────────────────────────────────── */}
           {timelineBlocks.length > 0 ? (
             <MotionCard delay={0.2} className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="section-title mb-0">Today's Schedule</h2>
-                <a href="/schedule" className="text-xs text-brand-primary font-medium hover:underline">
-                  View all →
-                </a>
-              </div>
-              <div className="space-y-1.5">
-                {timelineBlocks.slice(0, 8).map((block) => {
-                  const style  = BLOCK_STYLES[block.type] || BLOCK_STYLES.TASK
-                  const icon   = BLOCK_LABEL[block.type] || '📝'
-                  const start  = parseISO(block.startTime)
-                  const isActive =
-                    currentTime >= start && currentTime <= parseISO(block.endTime)
-                  const task = block.type === 'TASK' ? (block.taskId as Task) : null
+              <div className="card p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="section-title mb-0">Today's Schedule</h2>
+                  <a href="/schedule" className="text-xs font-bold text-brand-primary hover:underline flex items-center gap-1">
+                    View all →
+                  </a>
+                </div>
+                <div className="space-y-2">
+                  {timelineBlocks.slice(0, 8).map((block) => {
+                    const style   = BLOCK_STYLES[block.type] || BLOCK_STYLES.TASK
+                    const icon    = BLOCK_LABEL[block.type] || '📝'
+                    const start   = parseISO(block.startTime)
+                    const isActive = currentTime >= start && currentTime <= parseISO(block.endTime)
+                    const task    = block.type === 'TASK' ? (block.taskId as Task) : null
 
-                  return (
-                    <div
-                      key={block._id}
-                      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl border transition-all ${style.bg}
-                        ${isActive ? 'ring-1 ring-brand-primary/30' : ''}`}
-                    >
-                      <div className={`w-2 h-2 rounded-full shrink-0 ${style.dot}`} />
-                      <span className="text-xs font-mono font-semibold text-text-muted w-12 shrink-0">
-                        {format(start, 'HH:mm')}
-                      </span>
-                      <span className="text-base shrink-0">{icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium truncate block">
-                          {block.type === 'TASK'
-                            ? task?.title || 'Task'
-                            : block.type === 'BREAK'  ? 'Break'
-                            : block.type === 'BUFFER' ? 'Buffer'
-                            : block.reason || block.type}
+                    return (
+                      <div
+                        key={block._id}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all ${style.bg}
+                          ${isActive ? 'ring-2 ring-brand-primary/25 shadow-sm' : ''}`}
+                      >
+                        <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${style.dot}`} />
+                        <span className="text-[11px] font-bold font-mono text-text-muted w-11 shrink-0">
+                          {format(start, 'HH:mm')}
                         </span>
-                        {task?.category && (
-                          <span className="text-xs text-text-muted capitalize">{task.category}</span>
+                        <span className="text-base shrink-0">{icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold truncate block text-text-primary">
+                            {block.type === 'TASK'
+                              ? task?.title || 'Task'
+                              : block.type === 'BREAK'  ? 'Break Time'
+                              : block.type === 'BUFFER' ? 'Buffer'
+                              : block.reason || block.type}
+                          </span>
+                          {task?.category && (
+                            <span className="text-xs text-text-muted capitalize font-medium">{task.category}</span>
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-text-muted shrink-0 bg-bg-primary px-2 py-0.5 rounded-full">
+                          {block.scheduledDurationMinutes}m
+                        </span>
+                        {isActive && (
+                          <span className="text-[10px] font-bold text-white bg-brand-primary px-2 py-0.5 rounded-full shrink-0">
+                            NOW
+                          </span>
+                        )}
+                        {block.status === 'completed' && (
+                          <span className="w-5 h-5 rounded-full bg-status-success/15 flex items-center justify-center shrink-0">
+                            <span className="text-status-success text-xs font-bold">✓</span>
+                          </span>
                         )}
                       </div>
-                      <span className="text-xs text-text-muted shrink-0">
-                        {block.scheduledDurationMinutes}m
-                      </span>
-                      {isActive && (
-                        <span className="text-[10px] font-bold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded-full shrink-0">
-                          NOW
-                        </span>
-                      )}
-                      {block.status === 'completed' && (
-                        <span className="text-status-success text-sm shrink-0">✓</span>
-                      )}
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
             </MotionCard>
           ) : (
             <MotionCard delay={0.2} className="mb-6">
-              <div className="glass-card p-10 text-center">
-                <div className="text-5xl mb-4">📅</div>
-                <h3 className="font-semibold text-text-primary text-lg mb-2">Nothing scheduled yet</h3>
+              <div className="card p-10 text-center">
+                <div className="w-16 h-16 rounded-3xl bg-brand-soft flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">📅</span>
+                </div>
+                <h3 className="font-bold text-text-primary text-lg mb-2">Nothing scheduled yet</h3>
                 <p className="text-text-muted text-sm mb-6 max-w-xs mx-auto">
                   Add tasks and hit "Generate AI Schedule" to build your optimal day.
                 </p>
@@ -284,10 +303,10 @@ const DashboardPage = () => {
             </MotionCard>
           )}
 
-          {/* ── AI Insights ──────────────────────────────────────────────────── */}
+          {/* ── AI Insights ───────────────────────────────────────────────────── */}
           {insights.length > 0 && (
             <MotionCard delay={0.25}>
-              <h2 className="section-title">AI Insights</h2>
+              <h2 className="section-title">✨ AI Insights</h2>
               <div className="space-y-2.5">
                 {insights.map((insight, i) => (
                   <InsightCard key={i} insight={insight} index={i} />

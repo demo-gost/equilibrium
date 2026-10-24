@@ -19,6 +19,7 @@ const applyTheme = (theme: ThemeMode) => {
     root.classList.add('dark');
   } else {
     root.classList.remove('dark');
+    // Explicitly add 'light' so our CSS selectors work
     root.classList.add('light');
   }
 };
@@ -26,7 +27,7 @@ const applyTheme = (theme: ThemeMode) => {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      theme: 'system',
+      theme: 'light',   // ← default is now light (soft lavender design)
       setTheme: (theme) => {
         applyTheme(theme);
         set({ theme });
@@ -37,6 +38,9 @@ export const useThemeStore = create<ThemeState>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           applyTheme(state.theme);
+        } else {
+          // No stored preference → apply light
+          applyTheme('light');
         }
       },
     }
