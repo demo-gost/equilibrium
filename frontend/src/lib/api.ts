@@ -66,7 +66,11 @@ api.interceptors.response.use(
       const { refreshToken, setTokens, logout } = useAuthStore.getState();
 
       if (!refreshToken) {
+        processQueue(new Error('No refresh token'), null);
+        isRefreshing = false;
         logout();
+        // Hard redirect to login (belt-and-suspenders)
+        window.location.href = '/login';
         return Promise.reject(error);
       }
 

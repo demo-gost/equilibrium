@@ -29,13 +29,16 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, accessToken, refreshToken) =>
         set({ user, accessToken, refreshToken, isAuthenticated: true }),
 
-      logout: () =>
+      logout: () => {
+        // Hard-clear localStorage to remove all persisted stale tokens
+        try { localStorage.removeItem('equilibrium-auth'); } catch (_) {}
         set({
           user: null,
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
-        }),
+        });
+      },
     }),
     {
       name: 'equilibrium-auth',

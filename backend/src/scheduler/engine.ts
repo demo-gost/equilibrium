@@ -68,6 +68,9 @@ export class SchedulingEngine {
     let sMonth = fromParts.month;
     let sDay = fromParts.day - 1;
 
+    // Dedup guard: track sleep block start times already added this run
+    const seenSleepStarts = new Set<number>();
+
     let sleepCursor = makeZonedDate(sYear, sMonth, sDay, 0, 0, 0, timeZone);
     while (sleepCursor < horizon) {
       const cParts = getZonedParts(sleepCursor, timeZone);
@@ -80,7 +83,9 @@ export class SchedulingEngine {
       if (wakeTime > fromTime && bedtime < horizon) {
         const sStart = bedtime < fromTime ? fromTime : bedtime;
         const dur = Math.round((wakeTime.getTime() - sStart.getTime()) / 60000);
-        if (dur > 0 && dur <= 24 * 60) {
+        const startKey = sStart.getTime();
+        if (dur > 0 && dur <= 24 * 60 && !seenSleepStarts.has(startKey)) {
+          seenSleepStarts.add(startKey);
           newBlocks.push({
             userId: user._id,
             startTime: sStart,

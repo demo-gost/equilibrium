@@ -32,13 +32,30 @@ export class ScheduleService {
 
     if (!user) throw createError('User not found', 404);
 
-    // Cancel existing non-protected future blocks from start of day
+    // Cancel existing non-protected future blocks from start of day.
+    // We use TWO passes to catch overnight sleep blocks:
+    //   Pass 1: blocks that START on or after cancelFrom (the normal case)
+    //   Pass 2: SLEEP blocks that START before cancelFrom but END after it
+    //           (e.g. a 23:00 → 07:00 sleep block inserted on a previous generate run)
     await ScheduleBlock.updateMany(
       {
         userId,
         startTime: { $gte: cancelFrom },
         isProtected: false,
         status: 'scheduled',
+      },
+      { status: 'cancelled' }
+    );
+
+    // Pass 2: cancel orphaned overnight SLEEP blocks that bleed into today
+    await ScheduleBlock.updateMany(
+      {
+        userId,
+        type: 'SLEEP',
+        isProtected: false,
+        status: 'scheduled',
+        startTime: { $lt: cancelFrom },
+        endTime: { $gt: cancelFrom },
       },
       { status: 'cancelled' }
     );

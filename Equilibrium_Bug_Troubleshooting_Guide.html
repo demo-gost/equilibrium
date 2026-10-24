@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Equilibrium — Bug Triage & Troubleshooting Playbook</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    @page {
+      size: A4;
+      margin: 15mm 13mm 15mm 13mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #1e293b;
+      background: #ffffff;
+      line-height: 1.55;
+      font-size: 12.5px;
+    }
+
+    .page-break {
+      page-break-before: always;
+      break-before: page;
+      padding-top: 10px;
+    }
+
+    .no-break {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .header-banner {
+      background: linear-gradient(135deg, #090d16 0%, #1e1b4b 60%, #4338ca 100%);
+      color: #ffffff;
+      padding: 24px 22px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25);
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.25);
+      border: 1px solid rgba(248, 113, 113, 0.4);
+      color: #fca5a5;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 3px 9px;
+      border-radius: 9999px;
+      margin-bottom: 10px;
+    }
+
+    .header-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+      margin-bottom: 5px;
+    }
+
+    .header-subtitle {
+      font-size: 13px;
+      color: #cbd5e1;
+      font-weight: 400;
+      margin-bottom: 12px;
+    }
+
+    .header-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+      color: #94a3b8;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      padding-top: 10px;
+    }
+
+    .header-meta span strong {
+      color: #e2e8f0;
+    }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 5px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    h3 {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #334155;
+      margin-top: 12px;
+      margin-bottom: 6px;
+    }
+
+    p {
+      margin-bottom: 8px;
+      color: #334155;
+    }
+
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+
+    .card-red {
+      background: #fef2f2;
+      border-color: #fecaca;
+      border-left: 4px solid #ef4444;
+    }
+
+    .card-amber {
+      background: #fffbeb;
+      border-color: #fde68a;
+      border-left: 4px solid #d97706;
+    }
+
+    .card-blue {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+      border-left: 4px solid #0284c7;
+    }
+
+    .card-green {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      border-left: 4px solid #16a34a;
+    }
+
+    .code-box {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      margin: 8px 0 10px 0;
+      border-left: 3px solid #38bdf8;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 14px 0;
+      font-size: 11.5px;
+    }
+
+    th {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-weight: 700;
+      text-align: left;
+      padding: 7px 9px;
+      border: 1px solid #cbd5e1;
+    }
+
+    td {
+      padding: 7px 9px;
+      border: 1px solid #e2e8f0;
+      vertical-align: top;
+      color: #334155;
+    }
+
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .badge-red { background: #fee2e2; color: #b91c1c; }
+    .badge-amber { background: #fef3c7; color: #b45309; }
+    .badge-blue { background: #e0f2fe; color: #0369a1; }
+    .badge-green { background: #dcfce7; color: #15803d; }
+
+    ol, ul {
+      margin-left: 18px;
+      margin-bottom: 10px;
+    }
+
+    li {
+      margin-bottom: 5px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header-banner">
+    <div class="header-badge">Incident Response &amp; Debugging SOP</div>
+    <div class="header-title">Equilibrium Bug Triage Playbook</div>
+    <div class="header-subtitle">Standard Operating Procedure for Isolating, Diagnosing, and Resolving Issues Rapidly</div>
+    <div class="header-meta">
+      <span><strong>System:</strong> Full-Stack (Frontend, Backend, ML, MongoDB)</span>
+      <span><strong>Objective:</strong> Mean Time to Recovery (MTTR) &lt; 5 Minutes</span>
+      <span><strong>Target:</strong> Zero Crash During Demos &amp; Testing</span>
+    </div>
+  </div>
+
+  <!-- SECTION 1: THE 5-STEP TRIAGE FRAMEWORK -->
+  <div class="no-break">
+    <h2>1. The 5-Step Universal Incident Triage Framework</h2>
+    <p>When an unexpected error or visual glitch appears, follow this systematic diagnostic loop rather than guessing:</p>
+
+    <div class="grid-2">
+      <div class="card card-blue">
+        <strong style="color: #0369a1;">Step 1: Isolate the Origin Layer</strong>
+        <p style="margin-top: 4px; font-size: 11.5px; margin-bottom: 0;">
+          Determine which tier produced the error:<br>
+          &bull; <strong>Frontend:</strong> Browser console (F12) shows red unhandled JS exceptions.<br>
+          &bull; <strong>Network (HTTP):</strong> 4xx or 5xx status codes in the Network tab.<br>
+          &bull; <strong>Backend:</strong> Terminal 1 logs throw an unhandled promise rejection.<br>
+          &bull; <strong>ML Microservice:</strong> Terminal 3 shows FastAPI 500 or timeout.
+        </p>
+      </div>
+      <div class="card card-amber">
+        <strong style="color: #b45309;">Step 2: Inspect Real Data Payload</strong>
+        <p style="margin-top: 4px; font-size: 11.5px; margin-bottom: 0;">
+          Inspect the exact JSON response in the browser Network tab under <code>Fetch/XHR</code>. Does the backend return empty arrays <code>[]</code> or missing fields? Never guess what data arrived; inspect the raw JSON.
+        </p>
+      </div>
+      <div class="card card-red">
+        <strong style="color: #b91c1c;">Step 3: Check Terminal Output</strong>
+        <p style="margin-top: 4px; font-size: 11.5px; margin-bottom: 0;">
+          Look at the active running terminal. If Node crashed, it will print the exact stack trace with line numbers. If ML crashed, Python traceback will pinpoint the exact feature vector error.
+        </p>
+      </div>
+      <div class="card card-green">
+        <strong style="color: #15803d;">Step 4: Execute Minimal Fix &amp; Verify</strong>
+        <p style="margin-top: 4px; font-size: 11.5px; margin-bottom: 0;">
+          Make the surgical code correction. Do a TypeScript compile check (<code>npx tsc --noEmit</code>) immediately to catch secondary typing errors before restarting.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: COMPONENT-BY-COMPONENT DIAGNOSTIC TREE -->
+  <div class="no-break">
+    <h2>2. Component-by-Component Diagnostic Tree</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 20%;">Component</th>
+          <th style="width: 28%;">Symptom / Bug</th>
+          <th style="width: 24%;">First Diagnostic Action</th>
+          <th style="width: 28%;">Resolution Path</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-blue">Frontend UI</span></td>
+          <td>White screen of death or dashboard components not rendering.</td>
+          <td>Open browser DevTools (<code>Ctrl + Shift + I</code> or <code>F12</code>) &rarr; <strong>Console</strong>.</td>
+          <td>Look for unhandled syntax error (e.g. duplicate variable declaration) or undefined property access (<code>data?.items</code>).</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-blue">Frontend State</span></td>
+          <td>Stale data; completed task still appears or count shows 0.</td>
+          <td>Inspect <strong>TanStack Query</strong> cache or trigger manual hard-refresh (<code>Ctrl + Shift + R</code>).</td>
+          <td>Verify query keys match in <code>useQuery</code> and <code>queryClient.invalidateQueries({ queryKey: [...] })</code>.</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">Backend API</span></td>
+          <td>HTTP 500 on <code>/api/schedule/generate</code> or <code>/api/tasks</code>.</td>
+          <td>Inspect Backend terminal stdout/stderr logs.</td>
+          <td>Check if MongoDB is running and Mongoose models match schemas. Verify date ranges (<code>from &lt; to</code>).</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">Database</span></td>
+          <td>Query returns empty array even though tasks exist in database.</td>
+          <td>Verify <code>userId</code> matching logic in service.</td>
+          <td>MongoDB stores <code>userId</code> as <code>ObjectId</code> while JWT passes string. Use <code>$in: [userId, new ObjectId(userId)]</code>.</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-red">ML Service</span></td>
+          <td>Task creation hangs or predicted duration equals null.</td>
+          <td>Check if FastAPI service on port 8000 is running: <code>http://localhost:8000/health</code>.</td>
+          <td>Fallback to rule-based duration automatically if ML service is unreachable. Verify feature dimension array length (12 features).</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-green">Real-Time SSE</span></td>
+          <td>Schedule does not auto-update when task is extended.</td>
+          <td>Check Network tab for <code>/api/schedule/sse</code> connection status.</td>
+          <td>Verify SSE token authentication. Ensure client reconnects automatically with exponential backoff on disconnect.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- SECTION 3: TOP 6 KNOWN ISSUES IN EQUILIBRIUM & DIRECT FIXES -->
+  <div class="no-break">
+    <h2>3. Top 6 Equilibrium Specific Edge-Cases &amp; Direct Fixes</h2>
+
+    <h3>Case 1: Tasks Missing on Dashboard but Visible on Schedule Page</h3>
+    <div class="card card-amber">
+      <strong>Root Cause:</strong>
+      <ol style="margin-top: 6px; font-size: 11.5px;">
+        <li><strong>Time Window Mismatch:</strong> Dashboard queried <code>now</code> to <code>endOfDay</code>, while Schedule page queried the whole 24-hour bracket starting from <code>00:00:00</code>. Tasks scheduled earlier in the day were excluded.</li>
+        <li><strong>Array Slicing:</strong> Slicing only the first 6 items caused early morning blocks (e.g. Sleep at 02:00) to push daytime study tasks off the widget.</li>
+      </ol>
+      <div class="code-box">// Fix: Always start today's query window from midnight:
+const from = startOfDay(new Date());
+const to = endOfDay(new Date());
+// Display up to 8-10 blocks and highlight TASK blocks prominently in Up Next card</div>
+    </div>
+
+    <h3>Case 2: Duplicate Variable Declarations in Component Scope</h3>
+    <div class="card card-red">
+      <strong>Root Cause:</strong> Redeclaring <code>const now = new Date()</code> in the same component body throws a fatal <code>SyntaxError: Identifier 'now' has already been declared</code> which causes React to crash silently or fail hot reload.
+      <div class="code-box">// Verification command to run before testing:
+cd frontend ; npx tsc --noEmit
+// If TypeScript outputs 0 errors, the component syntax is clean!</div>
+    </div>
+
+    <h3>Case 3: MongoDB ObjectId vs String Type Discrepancy</h3>
+    <div class="card card-blue">
+      <strong>Root Cause:</strong> When tasks are populated from seeds or different endpoints, some documents store <code>userId</code> as a Mongoose <code>ObjectId</code> and others as a pure string. A strict query <code>{ userId: req.user.id }</code> fails to match.
+      <div class="code-box">// Safe Dual-Matching Pattern used in Equilibrium:
+const userObjId = mongoose.Types.ObjectId.isValid(userId) 
+  ? new mongoose.Types.ObjectId(userId) 
+  : null;
+const filter = userObjId ? { $in: [userId, userObjId] } : userId;</div>
+    </div>
+
+    <h3>Case 4: Timezone Offsets Shifting Sleep &amp; Study Blocks</h3>
+    <div class="card card-green">
+      <strong>Root Cause:</strong> Using UTC dates on a client machine in local timezone (e.g. IST UTC+5:30) can displace bedtime blocks into the wrong day.
+      <div class="code-box">// Solution: Equilibrium uses custom timezone utilities:
+// `makeZonedDate` and `getZonedParts` in `backend/src/utils/timezone.ts`
+// Always pass user's registered timezone or fall back to client local offset.</div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- SECTION 4: 30-SECOND LIVE DEMO EMERGENCY PLAYBOOK -->
+  <div class="no-break">
+    <h2>4. 30-Second Live Demo Emergency Playbook (For Presentation Day)</h2>
+    <div class="card card-red">
+      <strong style="color: #b91c1c; font-size: 13px;">🚨 Emergency Rules If a Bug Happens Live In Front of the Audience:</strong>
+      <ol style="margin-top: 8px; font-size: 11.5px; line-height: 1.6;">
+        <li><strong>Rule 1: NEVER PANIC OR FREEZE.</strong> Say calmly: <em>"Notice how our system catches runtime state changes — let me refresh the client cache to show the live synchronization."</em></li>
+        <li><strong>Rule 2: The Fast Client Reset (1 Second):</strong> Press <code>Ctrl + Shift + R</code> (Hard reload). In 90% of web demo glitches, this clears any stale DOM or local storage cache instantly.</li>
+        <li><strong>Rule 3: If Backend Stopped (5 Seconds):</strong> Keep terminal windows organized side-by-side. If the backend crashed, simply press <code>Up Arrow &rarr; Enter</code> in the backend terminal to restart <code>npm run dev</code>. It restarts in under 3 seconds!</li>
+        <li><strong>Rule 4: If ML Service Times Out (Bypass Feature):</strong> Equilibrium backend has built-in graceful degradation: if Python port 8000 is unreachable, the scheduler automatically falls back to Rule-Based Multipliers. The app does NOT crash!</li>
+        <li><strong>Rule 5: Keep a Pre-Seeded Demo Account:</strong> Have one test account already logged in with 5 completed tasks and a generated schedule. If live task creation acts up, switch tabs to the pre-seeded account immediately!</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- SECTION 5: DIAGNOSTIC COMMAND CHEAT SHEET -->
+  <div class="no-break">
+    <h2>5. Developer Diagnostic &amp; Healthcheck Command Cheat Sheet</h2>
+    <p>Run these quick terminal one-liners to verify full system health in 10 seconds:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25%;">Check</th>
+          <th style="width: 45%;">PowerShell / Bash Command</th>
+          <th style="width: 30%;">Expected Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1. Frontend TypeScript</strong></td>
+          <td><code>cd frontend ; npx tsc --noEmit</code></td>
+          <td>Empty output (0 errors).</td>
+        </tr>
+        <tr>
+          <td><strong>2. Backend TypeScript</strong></td>
+          <td><code>cd backend ; npx tsc --noEmit</code></td>
+          <td>Empty output (0 errors).</td>
+        </tr>
+        <tr>
+          <td><strong>3. Backend Health API</strong></td>
+          <td><code>curl http://localhost:5000/health</code></td>
+          <td><code>{"status":"ok"}</code></td>
+        </tr>
+        <tr>
+          <td><strong>4. ML Service Health API</strong></td>
+          <td><code>curl http://localhost:8000/health</code></td>
+          <td><code>{"status":"healthy"}</code></td>
+        </tr>
+        <tr>
+          <td><strong>5. MongoDB Connection</strong></td>
+          <td><code>powershell -Command "Test-NetConnection -ComputerName 127.0.0.1 -Port 27017"</code></td>
+          <td><code>TcpTestSucceeded : True</code></td>
+        </tr>
+        <tr>
+          <td><strong>6. Git Working Tree</strong></td>
+          <td><code>git status</code></td>
+          <td><code>nothing to commit, working tree clean</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 6: POST-MORTEM TEMPLATE -->
+  <div class="no-break">
+    <h2>6. Standard Bug Post-Mortem Template</h2>
+    <div class="card card-blue">
+      <p style="font-size: 11px; margin-bottom: 0;">
+        When documenting a solved bug in team repositories or presentation reports, use this industry-standard 4-line format:<br><br>
+        <strong>1. Incident:</strong> What failed and what was observed? (e.g. Schedule showed 0 tasks on dashboard).<br>
+        <strong>2. Root Cause:</strong> Why did it happen at code level? (e.g. Time filter was <code>now &rarr; endOfDay</code> instead of <code>startOfDay &rarr; endOfDay</code>).<br>
+        <strong>3. Surgical Fix:</strong> What line or file was altered? (e.g. Updated query window in <code>DashboardPage.tsx</code>).<br>
+        <strong>4. Prevention:</strong> How do we ensure it never happens again? (e.g. Added unit test checking schedule queries spanning past morning hours).
+      </p>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="margin-top: 25px; text-align: center; color: #94a3b8; font-size: 10.5px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+    Equilibrium Engineering SOP &bull; Production Bug Triage &amp; Incident Playbook &bull; 2026
+  </div>
+
+</body>
+</html>
